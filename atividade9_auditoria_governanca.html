@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC5 — Auditoria de Governança: Casos sob Investigação</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;700&display=swap');
+:root {
+  --dk1: #0D1B2A; --lt1: #FFFFFF; --dk2: #1B3A5C; --lt2: #E0E8F0;
+  --accent: #2E6ED9; --gray: #5B7FA5; --deep: #162D50; --teal: #3D5A80;
+  --success: #1d9e75; --error: #c0392b; --warning: #f39c12;
+  --card: #132640; --border: #1e3a5f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Raleway', 'Segoe UI', sans-serif; background: var(--dk1); color: var(--lt1); min-height: 100vh; }
+.wrap { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+.header { text-align: center; padding: 24px 16px; background: linear-gradient(135deg, var(--dk1), var(--dk2)); border-bottom: 3px solid var(--accent); }
+.header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+.header p { color: var(--gray); font-size: 0.85rem; }
+.badge { display: inline-block; background: var(--accent); color: var(--lt1); padding: 3px 12px; border-radius: 12px; font-size: 0.75rem; margin-top: 8px; }
+.timer { position: fixed; top: 8px; right: 16px; background: var(--dk2); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--gray); border: 1px solid var(--teal); z-index: 10; }
+.meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.eixo { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.cont { font-size: 0.8rem; color: var(--gray); }
+.bar { height: 5px; background: var(--deep); border-radius: 3px; overflow: hidden; margin-bottom: 18px; }
+.bar i { display: block; height: 100%; background: var(--accent); transition: width 0.3s; }
+.narra { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 16px 18px; margin-bottom: 18px; font-size: 0.9rem; line-height: 1.75; color: var(--lt2); }
+h3 { font-size: 1rem; font-weight: 700; margin: 0 0 10px; color: var(--lt1); }
+.pistas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.pista { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; }
+.pista:hover { border-color: var(--accent); background: var(--deep); }
+.pista b { display: block; font-size: 0.85rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+.pista em { font-size: 0.78rem; color: var(--gray); font-style: normal; }
+.pista p { margin: 8px 0 0; font-size: 0.85rem; color: var(--lt2); line-height: 1.55; }
+.pista.open { border-color: var(--accent); background: rgba(46,110,217,0.08); cursor: default; }
+label.op { display: flex; gap: 10px; align-items: flex-start; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; color: var(--lt2); font-size: 0.9rem; line-height: 1.5; }
+label.op:hover { border-color: var(--accent); background: var(--deep); }
+label.op.on { border-color: var(--accent); background: rgba(46,110,217,0.12); }
+label.op input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); flex: none; cursor: pointer; }
+button { font-family: 'Raleway', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--lt1); background: var(--accent); border: 0; border-radius: 8px; padding: 11px 26px; margin-top: 14px; cursor: pointer; transition: background 0.2s; }
+button:hover { background: #2560c0; }
+button[disabled] { background: var(--teal); opacity: 0.5; cursor: not-allowed; }
+button.sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+button.sec:hover { background: rgba(46,110,217,0.1); }
+.veredito { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: 0 8px 8px 0; padding: 16px 18px; margin-bottom: 16px; }
+.veredito.erro { border-left-color: var(--error); }
+.veredito b { display: block; font-size: 1.05rem; font-weight: 700; color: var(--success); margin-bottom: 6px; }
+.veredito.erro b { color: var(--error); }
+.veredito .sol { font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+.veredito p { margin: 0; font-size: 0.85rem; line-height: 1.7; color: var(--lt2); }
+.quadro { background: var(--card); border: 2px solid var(--accent); border-radius: 10px; padding: 26px; text-align: center; margin-bottom: 18px; }
+.pct { font-size: 3rem; font-weight: 700; line-height: 1.1; color: var(--accent); }
+.pctlab { font-size: 0.9rem; color: var(--gray); margin-top: 4px; }
+.rev { list-style: none; padding: 0; margin: 0; }
+.rev li { padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; gap: 10px; color: var(--lt2); }
+.rev li:last-child { border-bottom: 0; }
+.tag { flex: none; width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; }
+.ok { background: var(--success); }
+.no { background: var(--error); }
+.ref { font-size: 0.72rem; color: var(--gray); line-height: 1.7; margin: 22px 0 0; padding-top: 14px; border-top: 1px solid var(--border); }
+.hash-box { background: var(--deep); border-radius: 8px; padding: 10px; margin-top: 12px; font-family: monospace; font-size: 0.72rem; color: var(--gray); word-break: break-all; text-align: left; }
+.hash-box span { color: var(--accent); }
+@media (max-width: 560px) { .wrap { padding: 14px 12px; } .pct { font-size: 2.4rem; } .header h1 { font-size: 1.2rem; } }
+</style>
+</head>
+<body>
+<div class="timer" id="timer">⏱ 00:00</div>
+<div class="header">
+  <h1>🔎 Auditoria de Governança: Casos sob Investigação</h1>
+  <p>Assuma o papel de auditor e investigue falhas de governança corporativa</p>
+  <span class="badge">GC5 · ~10 minutos · 4 casos por sessão</span>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+const SALT = "GC2026UFRJ";
+const POR_SESSAO = 4;
+
+const CASOS = [
+  {
+    t: "As contas que não fecham",
+    n: "Você é chamado para auditar a Companhia Austral S.A., listada no Novo Mercado da B3. O balanço patrimonial mostra lucro consistente nos últimos cinco anos, mas o fluxo de caixa operacional apresenta resultado negativo crescente. Os bancos credores estão inquietos. A diretoria financeira assegura que 'tudo está dentro das normas contábeis'. O conselho quer sua avaliação independente.",
+    p: [
+      { t: "Demonstrações financeiras", d: "As receitas crescem 15% ao ano, mas o contas a receber quintuplicou no período. Há registros de 'antecipação de receitas' de contratos plurianuais reconhecidas integralmente no primeiro ano." },
+      { t: "Parecer da auditoria externa", d: "A mesma firma de auditoria atende a empresa há 12 anos. Todos os pareceres são 'sem ressalvas'. O sócio-líder da auditoria frequenta eventos sociais oferecidos pela diretoria." },
+      { t: "Comitê de auditoria", d: "O comitê de auditoria tem três membros, todos indicados pelo acionista controlador. Nenhum possui formação contábil ou financeira. Reuniu-se duas vezes no último ano, por menos de uma hora cada." },
+      { t: "Canal de denúncias", d: "A empresa possui canal de denúncias, mas ele é gerido pelo próprio diretor financeiro. Um funcionário da contabilidade registrou preocupação com o reconhecimento de receitas há seis meses; o registro foi arquivado sem encaminhamento." }
+    ],
+    h: [
+      ["Falha na independência e efetividade do comitê de auditoria e dos controles internos", 1],
+      ["Erro pontual de classificação contábil no contas a receber", 0],
+      ["Excesso de conservadorismo nas projeções de fluxo de caixa", 0],
+      ["Problema de liquidez temporário causado por fatores macroeconômicos", 0]
+    ],
+    s: "As evidências apontam para falha sistêmica de governança, não erro contábil isolado. O comitê de auditoria é ineficaz: sem independência (todos indicados pelo controlador), sem competência técnica e sem frequência adequada. A auditoria externa perdeu independência após 12 anos com o mesmo cliente e proximidade pessoal com a gestão. O canal de denúncias, subordinado ao próprio investigado, é uma fachada. São exatamente os mecanismos de controle que o IBGC preconiza como essenciais para o princípio de Responsabilização — e todos falharam simultaneamente."
+  },
+  {
+    t: "O conselho silencioso",
+    n: "A MegaCorp Participações S.A. acaba de anunciar a aquisição de uma empresa do cunhado do CEO por R$ 800 milhões — valor que analistas de mercado consideram pelo menos três vezes acima do justo. As ações caíram 22% no dia do anúncio. O conselho de administração aprovou a operação por unanimidade em reunião extraordinária convocada com 24 horas de antecedência. Você investiga a governança da transação.",
+    p: [
+      { t: "Composição do conselho", d: "Dos sete conselheiros, cinco foram indicados pelo CEO (que também é o maior acionista). Apenas um é independente, e este estava em viagem e participou por telefone, sem acesso aos documentos." },
+      { t: "Laudo de avaliação", d: "O laudo de avaliação foi elaborado por uma boutique financeira contratada pela própria diretoria, sem processo competitivo. O laudo não foi submetido a revisão por avaliador independente." },
+      { t: "Política de transações com partes relacionadas", d: "A empresa possui política formal, mas ela não exige abstenção do conselheiro conflitado na votação. O CEO votou a favor da aquisição." },
+      { t: "Direitos dos minoritários", d: "Acionistas minoritários com 15% do capital solicitaram assembleia especial para discutir a transação, mas a convocação foi negada pela presidência do conselho, alegando 'matéria de competência exclusiva do conselho'." }
+    ],
+    h: [
+      ["Conflito de interesses não gerenciado e violação dos princípios de equidade e transparência", 1],
+      ["Decisão estratégica legítima do conselho dentro de suas atribuições", 0],
+      ["Falha exclusiva do avaliador externo na precificação do ativo", 0],
+      ["Problema regulatório causado por lacuna na legislação societária brasileira", 0]
+    ],
+    s: "O caso é um exemplo clássico de conflito de interesses sem os devidos mecanismos de mitigação. Na Teoria da Agência, temos o agente (CEO) usando sua posição para beneficiar-se pessoalmente. O conselho, sem independência real (5 de 7 indicados pelo CEO), falhou como mecanismo de controle do principal. O CEO votou em causa própria sem abstenção. O laudo não foi independente. E os direitos dos minoritários foram suprimidos — violação direta do princípio de Equidade do IBGC. A operação precisaria de avaliação independente, abstenção dos conflitados e aprovação em assembleia."
+  },
+  {
+    t: "Transparência seletiva",
+    n: "A TechBrasil S.A., empresa de tecnologia listada no Nível 2 da B3, divulgou seus resultados trimestrais com destaque para o crescimento de 40% na receita. Porém, investidores institucionais estrangeiros reclamam que informações cruciais foram omitidas do release. O regulador pede que você avalie a qualidade da divulgação.",
+    p: [
+      { t: "Release de resultados", d: "O documento de 4 páginas destaca receita e EBITDA ajustado, mas não divulga a dívida líquida atualizada, a queima de caixa do trimestre, nem a perda de três contratos relevantes ocorrida no mês anterior ao fechamento." },
+      { t: "Formulário de Referência (FRE)", d: "O FRE, documento obrigatório junto à CVM, está desatualizado há oito meses. A seção de fatores de risco não menciona a concentração de receita em dois clientes (que respondem por 68% do faturamento)." },
+      { t: "Reunião com analistas", d: "A teleconferência de resultados foi realizada apenas em português, sem tradução, apesar de 35% do free float ser de investidores estrangeiros. Perguntas sobre a perda dos contratos foram respondidas com 'não comentamos operações individuais'." },
+      { t: "Insider trading", d: "Nos 15 dias anteriores à divulgação dos resultados, dois diretores venderam juntos R$ 12 milhões em ações. As vendas foram reportadas à CVM com cinco dias de atraso." }
+    ],
+    h: [
+      ["Violação do princípio de transparência com possível uso de informação privilegiada", 1],
+      ["Estratégia legítima de comunicação focada em indicadores-chave de desempenho", 0],
+      ["Problema técnico de tradução e acessibilidade do material de relações com investidores", 0],
+      ["Falha pontual no cumprimento de prazo regulatório junto à CVM", 0]
+    ],
+    s: "A empresa viola sistematicamente o princípio de Transparência do IBGC, que exige disponibilizar informações 'além das impostas por disposições legais ou regulamentares'. Há omissão deliberada de informações negativas (dívida, perda de contratos), FRE desatualizado, e barreira linguística que exclui parte relevante dos investidores. A venda de ações por diretores antes da divulgação configura possível insider trading — uso de informação assimétrica que a Teoria da Agência identifica como mecanismo de expropriação do principal. Cada evidência isolada poderia ser uma falha; juntas, revelam padrão de opacidade intencional."
+  },
+  {
+    t: "Governança de fachada",
+    n: "A Holding Consórcio S.A. acaba de receber o selo 'Empresa com Melhor Governança' de uma premiação de revista de negócios. Três meses depois, a CVM aplica multa milionária e a empresa é rebaixada do Novo Mercado para o segmento tradicional da B3. Você é contratado para entender como uma empresa 'premiada' teve falhas tão graves.",
+    p: [
+      { t: "Estrutura formal", d: "A empresa possui todos os órgãos recomendados: conselho com 20% de independentes, comitês de auditoria, riscos, pessoas e sustentabilidade. Publica relatório integrado de 180 páginas e aderiu ao Pacto Global da ONU." },
+      { t: "Funcionamento real", d: "Atas dos comitês revelam reuniões de 20 minutos em média, sem deliberações substantivas. O 'conselheiro independente' é cunhado do vice-presidente. Os relatórios de sustentabilidade são produzidos por agência de comunicação, sem verificação externa." },
+      { t: "Concentração de poder", d: "O presidente do conselho acumula o cargo de CEO — prática vedada pelo Novo Mercado desde sua reforma. O controlador detém 78% das ações ordinárias e veta qualquer proposta que não aprove pessoalmente." },
+      { t: "Processo sancionador", d: "A multa da CVM foi aplicada por: não divulgação de fato relevante (aquisição de empresa do controlador), descumprimento do tag along, e emissão irregular de debêntures sem aprovação do conselho." }
+    ],
+    h: [
+      ["Governança meramente formal (box-ticking), sem substância nem cultura de integridade", 1],
+      ["Falha do processo de premiação da revista em verificar as práticas", 0],
+      ["Excesso de regulação da CVM que penaliza empresas com boa intenção", 0],
+      ["Conflito entre os padrões do Novo Mercado e a legislação societária brasileira", 0]
+    ],
+    s: "O caso ilustra o fenômeno de 'governança de fachada' (box-ticking ou window dressing): cumprir formalmente todos os requisitos sem que os mecanismos funcionem de verdade. A 6ª edição do Código IBGC aborda exatamente isso ao incluir o princípio de Integridade — comportamento ético coerente, não apenas aparente. Ter comitês que não deliberam, independentes que não são independentes e relatórios não verificados é compliance sem governança. O acúmulo de cargos de CEO e presidente do conselho viola as regras do Novo Mercado e concentra poder sem contrapesos — o oposto do que a separação entre propriedade e gestão, identificada por Berle & Means, deveria assegurar."
+  },
+  {
+    t: "O minoritário invisível",
+    n: "O fundo de pensão EstadoPrev detém 8% das ações da InfraBrasil S.A. e descobre, pelos jornais, que a empresa aprovou em assembleia a incorporação de uma subsidiária deficitária — operação que diluiu a participação dos minoritários em 30%. O fundo alega que não foi sequer notificado. Você investiga se os direitos dos minoritários foram respeitados.",
+    p: [
+      { t: "Convocação da assembleia", d: "O edital de convocação foi publicado apenas no Diário Oficial do estado e em um jornal local de baixa circulação, com 8 dias de antecedência (o mínimo legal é 15 dias para incorporação). O site de RI não publicou a convocação." },
+      { t: "Laudo de incorporação", d: "A relação de troca foi definida por avaliação a valor contábil, não a valor econômico. A subsidiária incorporada tinha patrimônio líquido negativo de R$ 200 milhões. Não houve avaliação independente." },
+      { t: "Direito de recesso", d: "O estatuto prevê direito de recesso por valor patrimonial contábil — significativamente inferior ao valor de mercado. Na prática, exercer o recesso significaria perda de 60% do valor investido." },
+      { t: "Acordo de acionistas", d: "Existe acordo de acionistas entre o controlador e dois conselheiros que obriga o voto alinhado em 'todas as matérias societárias'. O acordo não foi registrado na CVM nem divulgado no FRE." }
+    ],
+    h: [
+      ["Violação do princípio de equidade e dos direitos dos acionistas minoritários", 1],
+      ["Decisão estratégica legítima de reestruturação societária", 0],
+      ["Falha do fundo de pensão em monitorar ativamente seus investimentos", 0],
+      ["Problema regulatório decorrente de brecha na Lei das Sociedades Anônimas", 0]
+    ],
+    s: "Múltiplos mecanismos de proteção ao minoritário foram violados: convocação irregular (prazo inferior ao legal e publicidade insuficiente), avaliação sem independência e por critério prejudicial (contábil, não econômico), direito de recesso que funciona como armadilha (perda de 60%), e acordo de acionistas oculto que predetermina os votos. O princípio de Equidade do IBGC exige 'tratamento justo e isonômico de todos os sócios'. O modelo brasileiro de governança, caracterizado pela concentração acionária, é particularmente vulnerável a esse tipo de expropriação do minoritário — razão pela qual o Novo Mercado exige tag along de 100% e mínimo de 25% de free float como salvaguardas."
+  },
+  {
+    t: "A sustentabilidade do papel",
+    n: "A AgroGlobal S.A. é celebrada como referência em ESG no setor agrícola. Publica relatório de sustentabilidade GRI, possui meta de carbono zero até 2030 e criou um comitê ESG no conselho. Porém, uma denúncia anônima ao Ministério Público revela passivos ambientais e trabalhistas graves. Você é designado para auditar a governança ESG.",
+    p: [
+      { t: "Relatório de sustentabilidade", d: "O relatório apresenta metas ambiciosas e indicadores positivos, mas não inclui auditoria independente dos dados. As emissões de Escopo 3 (cadeia produtiva) são excluídas do cálculo. A meta de 'carbono zero' refere-se apenas ao escritório sede." },
+      { t: "Cadeia produtiva", d: "Três dos maiores fornecedores de matéria-prima tiveram áreas embargadas por desmatamento ilegal pelo IBAMA nos últimos dois anos. A empresa mantém os contratos sem exigir remediação." },
+      { t: "Comitê ESG", d: "O comitê ESG reuniu-se uma vez no ano, com pauta limitada à aprovação do relatório de sustentabilidade. Nenhum dos três membros possui experiência em questões ambientais ou sociais. O comitê não tem poder deliberativo — apenas consultivo." },
+      { t: "Condições trabalhistas", d: "Auditoria do MPT encontrou condições análogas a trabalho escravo em duas fazendas de fornecedores diretos. A due diligence da empresa avaliava apenas risco financeiro de fornecedores, não risco socioambiental." }
+    ],
+    h: [
+      ["Greenwashing: governança ESG meramente declaratória, sem mecanismos efetivos de monitoramento", 1],
+      ["Problema exclusivo da cadeia de fornecedores, fora do perímetro de responsabilidade da empresa", 0],
+      ["Excesso de exigências regulatórias sobre sustentabilidade que inviabilizam o agronegócio", 0],
+      ["Falha pontual de comunicação entre o comitê ESG e a diretoria operacional", 0]
+    ],
+    s: "O caso exemplifica greenwashing corporativo: comunicação sofisticada de sustentabilidade sem governança real que a sustente. O princípio de Sustentabilidade do IBGC (6ª edição) exige 'zelar pela viabilidade econômico-financeira, ambiental, social e de governança da organização' — não apenas reportar. A exclusão do Escopo 3 (onde está o impacto real do agronegócio), a manutenção de fornecedores com embargo ambiental, e um comitê ESG sem poder nem competência demonstram que os mecanismos são de aparência, não de controle. A Teoria dos Stakeholders (Freeman, 1984) embasa a responsabilidade da empresa por toda sua cadeia produtiva."
+  }
+];
+
+let startTime = Date.now();
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
+}
+setInterval(updateTimer, 1000);
+
+function shuffle(a) { a = [...a]; for (let j = a.length - 1; j > 0; j--) { const r = Math.floor(Math.random() * (j + 1)); [a[j], a[r]] = [a[r], a[j]]; } return a; }
+
+const app = document.getElementById('app');
+let casos = [], idx = 0, acc = [];
+
+function init() {
+  casos = shuffle(CASOS).slice(0, POR_SESSAO).map(c => ({
+    ...c, h: shuffle(c.h)
+  }));
+  idx = 0; acc = []; startTime = Date.now(); renderCaso();
+}
+
+function renderCaso() {
+  const c = casos[idx];
+  let html = `
+    <div class="meta">
+      <span class="eixo">🔎 ${c.t}</span>
+      <span class="cont">Caso ${idx + 1} de ${casos.length}</span>
+    </div>
+    <div class="bar"><i style="width:${(idx / casos.length * 100).toFixed(0)}%"></i></div>
+    <div class="narra">${c.n}</div>
+    <h3>📁 Evidências coletadas</h3>
+    <div class="pistas" id="pistas">`;
+  c.p.forEach((p, n) => {
+    html += `<div class="pista" data-n="${n}"><b>${p.t}</b><em>clique para examinar</em></div>`;
+  });
+  html += `</div><h3>🎯 Seu parecer de auditoria</h3>`;
+  c.h.forEach((o, n) => {
+    html += `<label class="op"><input type="checkbox" value="${n}"><span>${o[0]}</span></label>`;
+  });
+  html += `<button id="btnParecer" disabled>Emitir Parecer</button>`;
+  app.innerHTML = html;
+
+  let abertas = 0;
+  app.querySelectorAll('.pista').forEach(d => {
+    d.addEventListener('click', () => {
+      if (d.classList.contains('open')) return;
+      d.classList.add('open'); abertas++;
+      const p = c.p[+d.dataset.n];
+      d.innerHTML = `<b>${p.t}</b><p>${p.d}</p>`;
+    });
+  });
+
+  const cxs = app.querySelectorAll('input[type=checkbox]');
+  const btn = app.querySelector('#btnParecer');
+  cxs.forEach(x => {
+    x.addEventListener('change', () => {
+      if (x.checked) cxs.forEach(d => { if (d !== x) d.checked = false; });
+      cxs.forEach(d => d.parentNode.classList.toggle('on', d.checked));
+      btn.disabled = ![...cxs].some(d => d.checked);
+    });
+  });
+
+  btn.addEventListener('click', () => {
+    const sel = [...cxs].find(d => d.checked);
+    const m = +sel.value;
+    const certo = !!c.h[m][1];
+    acc.push({ t: c.t, certo, gab: c.h.find(x => x[1])[0], pistas: abertas });
+    renderVeredito(certo);
+  });
+}
+
+function renderVeredito(certo) {
+  const c = casos[idx];
+  const a = acc[acc.length - 1];
+  let html = `
+    <div class="meta">
+      <span class="eixo">🔎 ${c.t}</span>
+      <span class="cont">Caso ${idx + 1} de ${casos.length}</span>
+    </div>
+    <div class="veredito${certo ? '' : ' erro'}">
+      <b>${certo ? '✅ Parecer correto — caso encerrado' : '❌ Parecer equivocado'}</b>
+      <div class="sol">Causa raiz: ${a.gab}</div>
+      <p>${c.s}</p>
+    </div>
+    <p style="color:var(--gray);font-size:0.85rem;margin-bottom:4px">Evidências examinadas neste caso: ${a.pistas} de ${c.p.length}.</p>
+    <button id="btnNext">${idx === casos.length - 1 ? 'Ver Resultado Final' : 'Próximo Caso →'}</button>`;
+  app.innerHTML = html;
+  app.querySelector('#btnNext').addEventListener('click', () => {
+    idx++;
+    idx < casos.length ? renderCaso() : renderResultado();
+  });
+}
+
+async function generateHash(text) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function renderResultado() {
+  const n = acc.filter(a => a.certo).length;
+  const pct = Math.round(n / acc.length * 100);
+  const pistas = acc.reduce((x, a) => x + a.pistas, 0);
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+
+  let msg = pct >= 90 ? 'Excelente auditor! Domínio sólido dos mecanismos de governança.'
+    : pct >= 70 ? 'Bom desempenho. Revise os princípios envolvidos nos casos que errou.'
+    : 'Releia os tópicos sobre princípios do IBGC e mecanismos de controle.';
+
+  const hashInput = `${SALT}|GC5|${n}/${acc.length}|${elapsed}`;
+  const hash = await generateHash(hashInput);
+
+  let revHtml = '';
+  acc.forEach(a => {
+    revHtml += `<li><span class="tag ${a.certo ? 'ok' : 'no'}"></span><span><b>${a.t}</b> — ${a.certo ? 'parecer correto' : 'causa correta: ' + a.gab}</span></li>`;
+  });
+
+  app.innerHTML = `
+    <div class="quadro">
+      <div class="pct">${pct}%</div>
+      <div class="pctlab">${n} de ${acc.length} casos solucionados · ${pistas} evidências examinadas · Tempo: ${m}:${s}</div>
+    </div>
+    <h3>Retrospecto dos Casos</h3>
+    <ul class="rev">${revHtml}</ul>
+    <div class="hash-box">Verificação: <span>${hash.substring(0, 16)}</span></div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="sec" id="btnNova">Nova Sessão de Auditoria</button>
+    </div>
+    <p class="ref"><b>Referências</b><br>
+    IBGC. <i>Código Brasileiro de Governança Corporativa</i>. 6ª ed. São Paulo: IBGC, 2023.<br>
+    JENSEN, M. C.; MECKLING, W. H. Theory of the firm: managerial behavior, agency costs and ownership structure. <i>Journal of Financial Economics</i>, v. 3, n. 4, p. 305-360, 1976.<br>
+    FREEMAN, R. E. <i>Strategic Management: A Stakeholder Approach</i>. Boston: Pitman, 1984.<br>
+    BERLE, A. A.; MEANS, G. C. <i>The Modern Corporation and Private Property</i>. New York: Macmillan, 1932.<br>
+    B3. <i>Regulamento do Novo Mercado</i>. São Paulo: B3, 2023.</p>`;
+  app.querySelector('#btnNova').addEventListener('click', init);
+}
+
+init();
+</script>
+</body>
+</html>
