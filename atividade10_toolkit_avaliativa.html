@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC6 — Toolkit: Análise de Governança Corporativa</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap');
+:root {
+  --dk1:#0D1B2A; --lt1:#FFFFFF; --dk2:#1B3A5C; --lt2:#E0E8F0;
+  --accent:#2E6ED9; --gray:#5B7FA5; --deep:#162D50; --teal:#3D5A80;
+  --success:#1d9e75; --warning:#f39c12; --error:#c0392b;
+  --card:#132640; --border:#1e3a5f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Raleway','Segoe UI',sans-serif;background:var(--dk1);color:var(--lt1);min-height:100vh}
+.header{text-align:center;padding:28px 16px 20px;background:linear-gradient(135deg,var(--dk1),var(--dk2));border-bottom:3px solid var(--accent)}
+.header h1{font-size:1.35rem;font-weight:700;margin-bottom:4px}
+.header p{color:var(--gray);font-size:0.85rem}
+.badge{display:inline-block;background:var(--accent);color:var(--lt1);padding:3px 12px;border-radius:12px;font-size:0.75rem;margin-top:8px}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 40px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.tab{padding:10px 18px;font-size:0.85rem;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s;background:none;border-top:0;border-left:0;border-right:0;font-family:inherit}
+.tab:hover{color:var(--lt2)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none}
+.panel.on{display:block}
+
+/* Cards */
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:14px}
+.info-card h3{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.info-card p,.info-card li{font-size:0.88rem;line-height:1.7;color:var(--lt2)}
+.info-card ul{list-style:none;padding:0}
+.info-card li{padding:4px 0;padding-left:18px;position:relative}
+.info-card li::before{content:"•";position:absolute;left:0;color:var(--accent);font-weight:700}
+
+/* Briefing */
+.briefing{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;padding:20px 22px;margin-bottom:18px}
+.briefing h2{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.briefing .label{font-size:0.78rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.briefing table{width:100%;border-collapse:collapse;margin:12px 0}
+.briefing td{padding:8px 10px;font-size:0.85rem;color:var(--lt2);border-bottom:1px solid var(--border);vertical-align:top}
+.briefing td:first-child{color:var(--accent);font-weight:600;width:160px;white-space:nowrap}
+.crit-bar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.crit{background:var(--deep);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;min-width:140px;text-align:center}
+.crit b{display:block;font-size:1.4rem;color:var(--accent)}
+.crit span{font-size:0.78rem;color:var(--gray)}
+
+/* Accordion */
+.acc{margin-bottom:10px}
+.acc-head{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--lt1);font-size:0.9rem;font-weight:600;font-family:inherit;text-align:left;transition:all .2s}
+.acc-head:hover{border-color:var(--accent);background:var(--deep)}
+.acc-head .arrow{transition:transform .2s;color:var(--accent);font-size:0.8rem;flex:none}
+.acc-head.open{border-color:var(--accent);border-radius:8px 8px 0 0}
+.acc-head.open .arrow{transform:rotate(90deg)}
+.acc-body{display:none;background:var(--card);border:1px solid var(--accent);border-top:0;border-radius:0 0 8px 8px;padding:16px 18px}
+.acc-body.open{display:block}
+.acc-body p,.acc-body li{font-size:0.85rem;line-height:1.7;color:var(--lt2)}
+.acc-body ul{list-style:none;padding:0}
+.acc-body li{padding:4px 0 4px 18px;position:relative}
+.acc-body li::before{content:"▸";position:absolute;left:0;color:var(--accent)}
+.acc-body h4{font-size:0.88rem;font-weight:700;color:var(--lt1);margin:10px 0 6px}
+.acc-body h4:first-child{margin-top:0}
+.acc-body .tip{background:rgba(46,110,217,0.08);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 6px 6px 0;margin:10px 0;font-size:0.82rem;color:var(--lt2)}
+
+/* Template */
+.tmpl{counter-reset:sec}
+.tmpl-sec{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:10px;counter-increment:sec}
+.tmpl-sec h4{font-size:0.92rem;font-weight:700;color:var(--lt1);margin-bottom:6px}
+.tmpl-sec h4::before{content:counter(sec)". ";color:var(--accent);font-weight:700}
+.tmpl-sec p{font-size:0.82rem;color:var(--gray);line-height:1.6;margin-bottom:4px}
+.tmpl-sec .tag{display:inline-block;background:var(--deep);border:1px solid var(--border);border-radius:4px;padding:1px 8px;font-size:0.72rem;color:var(--accent);margin-right:4px}
+
+/* Checklist */
+.check{list-style:none;padding:0}
+.check li{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:0.85rem;color:var(--lt2);cursor:pointer;transition:all .15s;user-select:none}
+.check li:hover{border-color:var(--accent)}
+.check li.done{opacity:0.55;text-decoration:line-through;border-color:var(--success)}
+.check li .box{width:20px;height:20px;border:2px solid var(--teal);border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:all .15s}
+.check li.done .box{background:var(--success);border-color:var(--success);color:var(--lt1)}
+.progress-bar{height:6px;background:var(--deep);border-radius:3px;overflow:hidden;margin-bottom:14px}
+.progress-bar i{display:block;height:100%;background:var(--success);transition:width .3s}
+.progress-label{font-size:0.8rem;color:var(--gray);margin-bottom:8px;text-align:right}
+
+/* Links */
+.link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.link-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-decoration:none;color:var(--lt1);transition:all .2s;display:block}
+.link-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px rgba(46,110,217,0.15)}
+.link-card b{display:block;font-size:0.88rem;margin-bottom:4px}
+.link-card span{font-size:0.78rem;color:var(--gray);line-height:1.4}
+
+.note{font-size:0.78rem;color:var(--gray);margin-top:16px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6}
+@media(max-width:560px){.wrap{padding:14px 12px}.tab{padding:8px 12px;font-size:0.8rem}.briefing td:first-child{width:auto}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📋 Toolkit: Análise de Governança Corporativa</h1>
+  <p>Atividade avaliativa — guias, template e checklist para o relatório</p>
+  <span class="badge">GC6 · Trabalho em grupo · Entrega na Aula 4</span>
+</div>
+
+<div class="wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="0">📌 Briefing</button>
+    <button class="tab" data-t="1">📖 Guias de Análise</button>
+    <button class="tab" data-t="2">📝 Template do Relatório</button>
+    <button class="tab" data-t="3">✅ Checklist</button>
+    <button class="tab" data-t="4">🔗 Fontes e Links</button>
+  </div>
+
+  <!-- ===== TAB 0: BRIEFING ===== -->
+  <div class="panel on" data-p="0">
+    <div class="briefing">
+      <div class="label">Atividade Avaliativa</div>
+      <h2>Análise de Governança Corporativa</h2>
+      <table>
+        <tr><td>Formato</td><td>Trabalho em grupo (1 a 4 alunos)</td></tr>
+        <tr><td>Objeto de análise</td><td>Uma empresa listada no <b>Novo Mercado da B3</b></td></tr>
+        <tr><td>Fonte principal</td><td>Formulário de Referência (FRE) da empresa, disponível no site da CVM</td></tr>
+        <tr><td>Elementos a analisar</td><td>Estrutura do conselho, comitês, política de remuneração e transparência</td></tr>
+        <tr><td>Referencial</td><td>Princípios do IBGC (6ª edição): Transparência, Equidade, Responsabilização, Responsabilidade Corporativa, Integridade e Sustentabilidade</td></tr>
+        <tr><td>Entregável</td><td>Relatório de <b>3 a 5 páginas</b> com análise crítica</td></tr>
+        <tr><td>Prazo</td><td>Entrega na <b>Aula 4</b></td></tr>
+      </table>
+      <div class="crit-bar">
+        <div class="crit"><b>30%</b><span>Fundamentação teórica</span></div>
+        <div class="crit"><b>40%</b><span>Análise dos dados</span></div>
+        <div class="crit"><b>30%</b><span>Propostas de melhoria</span></div>
+      </div>
+    </div>
+    <div class="info-card">
+      <h3>💡 O que se espera</h3>
+      <p>Não se trata de descrever o que a empresa faz, mas de <b>avaliar criticamente</b> suas práticas de governança à luz dos princípios do IBGC e das teorias estudadas. Identifique pontos fortes, fragilidades e proponha melhorias fundamentadas.</p>
+    </div>
+  </div>
+
+  <!-- ===== TAB 1: GUIAS ===== -->
+  <div class="panel" data-p="1">
+    <div class="info-card" style="margin-bottom:16px">
+      <h3>📖 Guias de Referência por Dimensão</h3>
+      <p>Cada guia abaixo orienta o que buscar, onde encontrar e como analisar cada dimensão da governança.</p>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">🏛️ Estrutura do Conselho de Administração <span class="arrow">▸</span></button>
+      <div class="acc-body">
+        <h4>O que analisar</h4>
+        <ul>
+          <li>Tamanho do conselho (recomendação IBGC: 5 a 11 membros)</li>
+          <li>Percentual de conselheiros independentes (mínimo 1/3 para Novo Mercado; IBGC recomenda maioria)</li>
+          <li>Separação das funções de CEO e presidente do conselho</li>
+          <li>Qualificação e diversidade dos membros (formação, experiência, gênero, etnia)</li>
+          <li>Mandato e mecanismo de eleição (voto cumulativo, chapas)</li>
+          <li>Frequência das reuniões (ordinárias e extraordinárias)</li>
+          <li>Existência de avaliação formal do conselho e conselheiros</li>
+        </ul>
+        <h4>Onde encontrar no FRE</h4>
+        <ul>
+          <li>Seção 12 — Assembleia e Administração: composição, experiência profissional</li>
+          <li>Seção 7 — Atividades do emissor: estrutura administrativa</li>
+        </ul>
+        <div class="tip">💡 <b>Dica:</b> Verifique se o "independente" é de fato independente — cunhados, ex-diretores ou fornecedores regulares não cumprem o critério de independência real.</div>
+        <h4>Perguntas-chave para a análise</h4>
+        <ul>
+          <li>O conselho tem diversidade suficiente de competências para supervisionar a gestão?</li>
+          <li>A proporção de independentes é adequada para mitigar conflitos de agência?</li>
+          <li>Há concentração de poder que comprometa o sistema de freios e contrapesos?</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">⚙️ Comitês do Conselho <span class="arrow">▸</span></button>
+      <div class="acc-body">
+        <h4>O que analisar</h4>
+        <ul>
+          <li>Quais comitês existem (auditoria, riscos, remuneração, pessoas, sustentabilidade/ESG, ética)</li>
+          <li>Composição: conselheiros independentes? Especialistas externos?</li>
+          <li>Poder deliberativo vs. consultivo</li>
+          <li>Frequência de reuniões e acesso a informações</li>
+          <li>Interação com auditorias interna e externa</li>
+        </ul>
+        <h4>Onde encontrar no FRE</h4>
+        <ul>
+          <li>Seção 12.1 — Descrição da estrutura administrativa</li>
+          <li>Relatório Anual ou de Governança (quando disponível no site de RI)</li>
+        </ul>
+        <div class="tip">💡 <b>Dica:</b> O comitê de auditoria é obrigatório no Novo Mercado. Compare a composição real com as recomendações do IBGC: ao menos um membro com experiência em contabilidade e finanças.</div>
+        <h4>Referencial teórico</h4>
+        <ul>
+          <li><b>Teoria da Agência</b> — Comitês são mecanismos de monitoramento do agente pelo principal</li>
+          <li><b>IBGC 6ª ed.</b> — Comitês com poder deliberativo e independência fortalecem o princípio de Responsabilização</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">💰 Política de Remuneração <span class="arrow">▸</span></button>
+      <div class="acc-body">
+        <h4>O que analisar</h4>
+        <ul>
+          <li>Remuneração fixa vs. variável dos executivos e conselheiros</li>
+          <li>Existência de remuneração baseada em ações (stock options, ações restritas)</li>
+          <li>Alinhamento com desempenho de longo prazo vs. curto prazo</li>
+          <li>Transparência: divulgação individual ou agregada?</li>
+          <li>Existência de cláusulas de clawback (devolução de bônus)</li>
+          <li>Comparação com pares do setor (proporcionalidade)</li>
+        </ul>
+        <h4>Onde encontrar no FRE</h4>
+        <ul>
+          <li>Seção 13 — Remuneração dos administradores: detalhamento dos valores</li>
+          <li>Ata da assembleia que aprovou a remuneração global</li>
+        </ul>
+        <div class="tip">💡 <b>Dica:</b> Na Teoria da Agência, a remuneração variável alinha interesses do agente (gestor) ao do principal (acionista). Mas se 90% do bônus depende de metas de curto prazo, o incentivo pode levar a decisões que prejudicam valor no longo prazo.</div>
+        <h4>Perguntas-chave</h4>
+        <ul>
+          <li>A política incentiva criação de valor sustentável ou ganhos de curto prazo?</li>
+          <li>O nível de transparência da remuneração é adequado ao princípio de Transparência do IBGC?</li>
+          <li>Existe assimetria significativa entre a remuneração da diretoria e do conselho?</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">🔍 Transparência e Divulgação <span class="arrow">▸</span></button>
+      <div class="acc-body">
+        <h4>O que analisar</h4>
+        <ul>
+          <li>Qualidade e tempestividade das divulgações (fatos relevantes, comunicados ao mercado)</li>
+          <li>Site de Relações com Investidores: navegabilidade, conteúdo, idiomas</li>
+          <li>Relatório Integrado ou de Sustentabilidade (GRI, SASB, TCFD)</li>
+          <li>Política de divulgação de informações e de negociação de valores mobiliários</li>
+          <li>Canais de relacionamento com minoritários</li>
+          <li>Canal de denúncias: existência, independência e efetividade</li>
+        </ul>
+        <h4>Onde encontrar</h4>
+        <ul>
+          <li>FRE — Seção 5 (Política de divulgação), Seção 4 (Fatores de risco)</li>
+          <li>Site de RI da empresa</li>
+          <li>Relatório de Sustentabilidade / Relatório Integrado</li>
+        </ul>
+        <div class="tip">💡 <b>Dica:</b> Transparência vai além de cumprir o mínimo legal. O IBGC 6ª edição define: "disponibilizar para as partes interessadas as informações que sejam de seu interesse, e não apenas aquelas impostas por disposições legais ou regulamentares".</div>
+        <h4>Perguntas-chave</h4>
+        <ul>
+          <li>A empresa divulga informações além do mínimo exigido por regulação?</li>
+          <li>Os fatores de risco refletem a realidade do negócio ou são genéricos?</li>
+          <li>O investidor estrangeiro tem acesso ao mesmo nível de informação que o local?</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">⚖️ Princípios do IBGC (6ª edição, 2023) <span class="arrow">▸</span></button>
+      <div class="acc-body">
+        <h4>Os 6 princípios de governança</h4>
+        <ul>
+          <li><b>Transparência</b> — Disponibilizar informações além do obrigatório, em linguagem acessível, gerando um clima de confiança</li>
+          <li><b>Equidade</b> — Tratamento justo e isonômico de todos os sócios e demais stakeholders, sem privilégios indevidos</li>
+          <li><b>Responsabilização (Accountability)</b> — Agentes de governança prestam contas de sua atuação, assumindo consequências de seus atos</li>
+          <li><b>Responsabilidade Corporativa</b> — Zelar pela viabilidade econômico-financeira da organização, reduzindo externalidades negativas</li>
+          <li><b>Integridade</b> — <i>(novo na 6ª ed.)</i> Prática diária de comportamento ético coerente, além do compliance formal</li>
+          <li><b>Sustentabilidade</b> — <i>(novo na 6ª ed.)</i> Incorporação das dimensões ambiental, social e de governança (ESG) na estratégia</li>
+        </ul>
+        <div class="tip">💡 <b>Dica:</b> Use estes 6 princípios como lente de análise em cada dimensão. Um ponto forte ou fragilidade deve sempre ser conectado a pelo menos um princípio.</div>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">📚 Teorias para fundamentação <span class="arrow">▸</span></button>
+      <div class="acc-body">
+        <h4>Teorias aplicáveis</h4>
+        <ul>
+          <li><b>Teoria da Agência</b> (Jensen & Meckling, 1976) — Conflitos entre principal e agente; mecanismos de monitoramento e incentivo</li>
+          <li><b>Teoria dos Stakeholders</b> (Freeman, 1984) — Governança deve considerar interesses de todas as partes interessadas, não apenas acionistas</li>
+          <li><b>Stewardship Theory</b> (Donaldson & Davis, 1991) — Gestores como guardiões, não oportunistas; cooperação vs. controle</li>
+          <li><b>Berle & Means</b> (1932) — Separação entre propriedade e controle como origem dos conflitos de governança</li>
+        </ul>
+        <h4>Como aplicar</h4>
+        <ul>
+          <li>Identifique qual teoria melhor explica a <b>estrutura</b> de governança da empresa escolhida</li>
+          <li>Avalie se os mecanismos encontrados servem mais ao <b>monitoramento</b> (agência) ou à <b>colaboração</b> (stewardship)</li>
+          <li>Discuta se a governança contempla <b>múltiplos stakeholders</b> ou se é voltada exclusivamente ao acionista</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2: TEMPLATE ===== -->
+  <div class="panel" data-p="2">
+    <div class="info-card" style="margin-bottom:16px">
+      <h3>📝 Estrutura Sugerida do Relatório (3–5 páginas)</h3>
+      <p>Use esta estrutura como guia. Adapte conforme as particularidades da empresa escolhida.</p>
+    </div>
+    <div class="tmpl">
+      <div class="tmpl-sec">
+        <h4>Introdução</h4>
+        <p>Apresente a empresa escolhida, seu setor, porte e relevância no mercado. Justifique a escolha.</p>
+        <p><span class="tag">~½ página</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Perfil da Empresa e Estrutura Acionária</h4>
+        <p>Descreva: composição acionária (controlador, free float, investidores institucionais), segmento de listagem na B3, setor de atuação e breve histórico de governança.</p>
+        <p><span class="tag">~½ página</span> <span class="tag">FRE Seções 6 e 15</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Análise do Conselho de Administração</h4>
+        <p>Composição, independência, diversidade, separação CEO/presidente, frequência de reuniões, avaliação formal. Compare com as recomendações do IBGC e as exigências do Novo Mercado.</p>
+        <p><span class="tag">~¾ página</span> <span class="tag">FRE Seção 12</span> <span class="tag">30% da nota</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Análise dos Comitês e Controles Internos</h4>
+        <p>Quais comitês existem, composição, poder deliberativo, frequência de reunião. Avalie a efetividade do comitê de auditoria e da auditoria independente.</p>
+        <p><span class="tag">~¾ página</span> <span class="tag">FRE Seção 12</span> <span class="tag">40% da nota</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Política de Remuneração e Transparência</h4>
+        <p>Estrutura de remuneração (fixa, variável, ações), alinhamento com desempenho de longo prazo. Avalie a qualidade da divulgação: site de RI, relatório integrado, canal de denúncias.</p>
+        <p><span class="tag">~¾ página</span> <span class="tag">FRE Seção 13</span> <span class="tag">40% da nota</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Pontos Fortes e Fragilidades</h4>
+        <p>Sintetize os achados à luz dos princípios do IBGC. Utilize uma tabela ou quadro comparativo: princípio → prática observada → avaliação (forte/adequado/frágil).</p>
+        <p><span class="tag">~½ página</span> <span class="tag">Referencial IBGC</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Propostas de Melhoria</h4>
+        <p>Para cada fragilidade identificada, proponha uma melhoria concreta e fundamentada teoricamente. Relacione com os princípios do IBGC e/ou boas práticas internacionais.</p>
+        <p><span class="tag">~½ página</span> <span class="tag">30% da nota</span></p>
+      </div>
+      <div class="tmpl-sec">
+        <h4>Conclusão e Referências</h4>
+        <p>Síntese da avaliação geral. Referências bibliográficas (IBGC, artigos, FRE da empresa).</p>
+        <p><span class="tag">~¼ página</span></p>
+      </div>
+    </div>
+    <div class="info-card" style="border-left:3px solid var(--warning)">
+      <h3>⚠️ Erros comuns a evitar</h3>
+      <ul>
+        <li>Apenas descrever sem avaliar criticamente</li>
+        <li>Não conectar os achados com os princípios do IBGC ou teorias estudadas</li>
+        <li>Propostas genéricas ("melhorar a governança") em vez de ações concretas</li>
+        <li>Ignorar a estrutura acionária ao analisar o conselho</li>
+        <li>Não utilizar o FRE como fonte primária de dados</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: CHECKLIST ===== -->
+  <div class="panel" data-p="3">
+    <div class="info-card" style="margin-bottom:14px">
+      <h3>✅ Checklist de Preparação</h3>
+      <p>Marque os itens à medida que avançar. O progresso é salvo neste navegador.</p>
+    </div>
+    <div class="progress-label" id="progLabel">0 / 16 concluídos</div>
+    <div class="progress-bar"><i id="progBar" style="width:0%"></i></div>
+    <ul class="check" id="checklist">
+      <li data-id="c1"><span class="box"></span>Formar o grupo (1–4 alunos)</li>
+      <li data-id="c2"><span class="box"></span>Escolher a empresa do Novo Mercado da B3</li>
+      <li data-id="c3"><span class="box"></span>Acessar o FRE da empresa no site da CVM</li>
+      <li data-id="c4"><span class="box"></span>Consultar o site de Relações com Investidores da empresa</li>
+      <li data-id="c5"><span class="box"></span>Analisar a estrutura acionária (controlador, free float)</li>
+      <li data-id="c6"><span class="box"></span>Mapear composição do conselho (tamanho, independentes, diversidade)</li>
+      <li data-id="c7"><span class="box"></span>Verificar separação CEO / presidente do conselho</li>
+      <li data-id="c8"><span class="box"></span>Listar os comitês e sua composição</li>
+      <li data-id="c9"><span class="box"></span>Analisar a política de remuneração (FRE Seção 13)</li>
+      <li data-id="c10"><span class="box"></span>Avaliar transparência e qualidade das divulgações</li>
+      <li data-id="c11"><span class="box"></span>Conectar achados aos princípios do IBGC (6ª ed.)</li>
+      <li data-id="c12"><span class="box"></span>Fundamentar com teoria (Agência, Stakeholders, Stewardship)</li>
+      <li data-id="c13"><span class="box"></span>Elaborar quadro de pontos fortes e fragilidades</li>
+      <li data-id="c14"><span class="box"></span>Redigir propostas de melhoria fundamentadas</li>
+      <li data-id="c15"><span class="box"></span>Revisar formatação e referências (3–5 páginas)</li>
+      <li data-id="c16"><span class="box"></span>Revisar antes de entregar na Aula 4</li>
+    </ul>
+  </div>
+
+  <!-- ===== TAB 4: LINKS ===== -->
+  <div class="panel" data-p="4">
+    <div class="info-card" style="margin-bottom:16px">
+      <h3>🔗 Fontes e Recursos</h3>
+      <p>Links para consulta durante a elaboração do trabalho.</p>
+    </div>
+
+    <h3 style="font-size:0.9rem;margin-bottom:10px;color:var(--accent)">Fontes primárias</h3>
+    <div class="link-grid" style="margin-bottom:18px">
+      <a class="link-card" href="https://www.rad.cvm.gov.br/ENET/frmConsultaExternaCVM.aspx" target="_blank" rel="noopener">
+        <b>📄 CVM — Sistema RAD</b>
+        <span>Busque o Formulário de Referência (FRE) da empresa escolhida</span>
+      </a>
+      <a class="link-card" href="https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm" target="_blank" rel="noopener">
+        <b>📊 B3 — Empresas Listadas</b>
+        <span>Consulte segmento de listagem, free float, setor e governança</span>
+      </a>
+      <a class="link-card" href="https://conhecimento.ibgc.org.br/Lists/Publicacoes/Attachments/24337/IBGC_CodigoBrasileirodeGovernancaCorporativa_2023_6edicao.pdf" target="_blank" rel="noopener">
+        <b>📘 Código IBGC — 6ª Edição</b>
+        <span>Documento completo do Código Brasileiro de Governança Corporativa (2023)</span>
+      </a>
+      <a class="link-card" href="https://www.b3.com.br/pt_br/regulacao/estrutura-normativa/listagem/regras/novo-mercado/" target="_blank" rel="noopener">
+        <b>⚖️ Regulamento do Novo Mercado</b>
+        <span>Regras de governança exigidas para listagem no Novo Mercado da B3</span>
+      </a>
+    </div>
+
+    <h3 style="font-size:0.9rem;margin-bottom:10px;color:var(--accent)">Referências teóricas</h3>
+    <div class="link-grid" style="margin-bottom:18px">
+      <a class="link-card" href="https://doi.org/10.1016/0304-405X(76)90026-X" target="_blank" rel="noopener">
+        <b>📄 Jensen & Meckling (1976)</b>
+        <span>Theory of the Firm: Managerial Behavior, Agency Costs, and Ownership Structure</span>
+      </a>
+      <a class="link-card" href="https://doi.org/10.2307/258887" target="_blank" rel="noopener">
+        <b>📄 Donaldson & Davis (1991)</b>
+        <span>Stewardship Theory or Agency Theory: CEO Governance and Shareholder Returns</span>
+      </a>
+    </div>
+
+    <h3 style="font-size:0.9rem;margin-bottom:10px;color:var(--accent)">Ferramentas úteis</h3>
+    <div class="link-grid">
+      <a class="link-card" href="https://sistemaswebb3-listados.b3.com.br/listedCompaniesPage/" target="_blank" rel="noopener">
+        <b>🔎 B3 — Busca de Companhias</b>
+        <span>Busque informações detalhadas de qualquer empresa listada na B3</span>
+      </a>
+      <a class="link-card" href="https://www.google.com/search?q=site:ri.+relat%C3%B3rio+integrado" target="_blank" rel="noopener">
+        <b>🌐 Buscar Relatórios Integrados</b>
+        <span>Pesquise relatórios integrados diretamente nos sites de RI das empresas</span>
+      </a>
+    </div>
+
+    <div class="note">
+      <b>Nota:</b> Os links acima direcionam para fontes externas. Verifique a disponibilidade dos documentos na data de consulta. O FRE pode ser acessado também pelo site de Relações com Investidores da própria empresa.
+    </div>
+  </div>
+</div>
+
+<script>
+// Tabs
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+tabs.forEach(t => {
+  t.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('on'));
+    panels.forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    document.querySelector(`[data-p="${t.dataset.t}"]`).classList.add('on');
+  });
+});
+
+// Accordions
+document.querySelectorAll('.acc-head').forEach(h => {
+  h.addEventListener('click', () => {
+    h.classList.toggle('open');
+    h.nextElementSibling.classList.toggle('open');
+  });
+});
+
+// Checklist with localStorage
+const CK = 'gc6_check';
+let checked = {};
+try { checked = JSON.parse(localStorage.getItem(CK)) || {}; } catch(e) {}
+
+function updateProgress() {
+  const items = document.querySelectorAll('#checklist li');
+  const done = [...items].filter(l => l.classList.contains('done')).length;
+  document.getElementById('progLabel').textContent = `${done} / ${items.length} concluídos`;
+  document.getElementById('progBar').style.width = `${(done / items.length * 100).toFixed(0)}%`;
+}
+
+document.querySelectorAll('#checklist li').forEach(li => {
+  const id = li.dataset.id;
+  if (checked[id]) { li.classList.add('done'); li.querySelector('.box').textContent = '✓'; }
+  li.addEventListener('click', () => {
+    li.classList.toggle('done');
+    const isDone = li.classList.contains('done');
+    li.querySelector('.box').textContent = isDone ? '✓' : '';
+    checked[id] = isDone;
+    try { localStorage.setItem(CK, JSON.stringify(checked)); } catch(e) {}
+    updateProgress();
+  });
+});
+updateProgress();
+</script>
+</body>
+</html>
