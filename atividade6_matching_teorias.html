@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC2 — Matching: Teorias de Governança</title>
+<style>
+:root {
+  --dk1: #0D1B2A; --lt1: #FFFFFF; --dk2: #1B3A5C; --lt2: #E0E8F0;
+  --accent: #2E6ED9; --gray: #5B7FA5; --deep: #162D50; --teal: #3D5A80;
+  --success: #27ae60; --error: #e74c3c; --warning: #f39c12;
+  --agencia: #e74c3c; --stakeholders: #2E6ED9; --stewardship: #27ae60;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; background: var(--dk1); color: var(--lt1); min-height: 100vh; user-select: none; -webkit-user-select: none; }
+.header { background: linear-gradient(135deg, var(--dk1), var(--dk2)); padding: 24px; text-align: center; border-bottom: 3px solid var(--accent); }
+.header h1 { font-size: 1.4rem; margin-bottom: 4px; }
+.header p { color: var(--gray); font-size: 0.85rem; }
+.badge { display: inline-block; background: var(--accent); color: var(--lt1); padding: 3px 12px; border-radius: 12px; font-size: 0.75rem; margin-top: 8px; }
+.container { max-width: 800px; margin: 0 auto; padding: 16px; }
+.instructions { background: var(--dk2); border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 3px solid var(--accent); font-size: 0.9rem; color: var(--lt2); }
+.instructions strong { color: var(--accent); }
+.columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.col-header { text-align: center; font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; padding: 8px; border-radius: 8px; }
+.col-header.left { background: var(--deep); }
+.col-header.right { background: var(--deep); }
+.drop-zones { display: flex; flex-direction: column; gap: 10px; }
+.theory-zone { border-radius: 10px; padding: 12px; min-height: 60px; border: 2px solid; }
+.theory-zone[data-theory="agencia"] { border-color: var(--agencia); background: rgba(231,76,60,0.08); }
+.theory-zone[data-theory="stakeholders"] { border-color: var(--stakeholders); background: rgba(46,110,217,0.08); }
+.theory-zone[data-theory="stewardship"] { border-color: var(--stewardship); background: rgba(39,174,96,0.08); }
+.theory-zone .zone-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.theory-zone[data-theory="agencia"] .zone-title { color: var(--agencia); }
+.theory-zone[data-theory="stakeholders"] .zone-title { color: var(--stakeholders); }
+.theory-zone[data-theory="stewardship"] .zone-title { color: var(--stewardship); }
+.zone-dot { width: 10px; height: 10px; border-radius: 50%; }
+.theory-zone[data-theory="agencia"] .zone-dot { background: var(--agencia); }
+.theory-zone[data-theory="stakeholders"] .zone-dot { background: var(--stakeholders); }
+.theory-zone[data-theory="stewardship"] .zone-dot { background: var(--stewardship); }
+.zone-items { display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px; }
+.drag-pool { display: flex; flex-direction: column; gap: 8px; }
+.drag-item { background: var(--dk2); border: 2px solid var(--teal); border-radius: 8px; padding: 10px 14px; cursor: grab; font-size: 0.88rem; line-height: 1.4; transition: all 0.2s; position: relative; }
+.drag-item:hover { border-color: var(--accent); background: var(--deep); }
+.drag-item.dragging { opacity: 0.4; }
+.drag-item.placed { cursor: pointer; font-size: 0.82rem; padding: 6px 10px; }
+.drag-item.correct-item { border-color: var(--success); background: rgba(39,174,96,0.12); }
+.drag-item.wrong-item { border-color: var(--error); background: rgba(231,76,60,0.12); }
+.theory-zone.drag-over { box-shadow: 0 0 12px rgba(46,110,217,0.4); }
+.btn-row { display: flex; justify-content: center; gap: 12px; margin-top: 16px; }
+.btn { padding: 10px 24px; border-radius: 8px; border: none; font-size: 0.95rem; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: var(--lt1); }
+.btn-primary:hover { background: #2560c0; }
+.btn-secondary { background: var(--teal); color: var(--lt1); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.score-bar { display: none; background: var(--dk2); border-radius: 10px; padding: 20px; text-align: center; margin-top: 16px; border: 2px solid var(--accent); }
+.score-bar h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.score-bar .score-num { font-size: 2rem; font-weight: 700; color: var(--accent); }
+.score-bar .score-msg { color: var(--gray); font-size: 0.9rem; margin-top: 6px; }
+.hash-box { background: var(--deep); border-radius: 8px; padding: 10px; margin-top: 12px; font-family: monospace; font-size: 0.72rem; color: var(--gray); word-break: break-all; }
+.hash-box span { color: var(--accent); }
+.timer { position: fixed; top: 8px; right: 16px; background: var(--dk2); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--gray); border: 1px solid var(--teal); z-index: 10; }
+.ref { text-align: center; color: var(--gray); font-size: 0.7rem; font-style: italic; padding: 16px; }
+@media (max-width: 700px) {
+  .columns { grid-template-columns: 1fr; }
+  .header h1 { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<div class="timer" id="timer">⏱ 00:00</div>
+<div class="header">
+  <h1>Matching: Teorias de Governança</h1>
+  <p>Arraste cada característica para a teoria correspondente</p>
+  <span class="badge">GC2 · ~4 minutos · 12 itens</span>
+</div>
+<div class="container">
+  <div class="instructions">
+    <strong>Como funciona:</strong> Arraste (ou toque) cada afirmação da coluna da direita e solte na zona da teoria correta à esquerda. Ao posicionar todas, clique em "Verificar Respostas".
+  </div>
+  <div class="columns">
+    <div>
+      <div class="col-header left">📚 Teorias</div>
+      <div class="drop-zones" id="zones">
+        <div class="theory-zone" data-theory="agencia" ondragover="ev(event)" ondrop="drop(event)" ondragleave="leave(event)">
+          <div class="zone-title"><div class="zone-dot"></div>Teoria da Agência</div>
+          <div class="zone-items" id="zone-agencia"></div>
+        </div>
+        <div class="theory-zone" data-theory="stakeholders" ondragover="ev(event)" ondrop="drop(event)" ondragleave="leave(event)">
+          <div class="zone-title"><div class="zone-dot"></div>Teoria dos Stakeholders</div>
+          <div class="zone-items" id="zone-stakeholders"></div>
+        </div>
+        <div class="theory-zone" data-theory="stewardship" ondragover="ev(event)" ondrop="drop(event)" ondragleave="leave(event)">
+          <div class="zone-title"><div class="zone-dot"></div>Stewardship Theory</div>
+          <div class="zone-items" id="zone-stewardship"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="col-header right">🧩 Características</div>
+      <div class="drag-pool" id="pool"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="btnCheck" onclick="checkAnswers()" disabled>Verificar Respostas</button>
+    <button class="btn btn-secondary" onclick="location.reload()">Reiniciar</button>
+  </div>
+  <div class="score-bar" id="scoreBar"></div>
+</div>
+<div class="ref">Jensen & Meckling (1976) · Freeman (1984) · Donaldson & Davis (1991)</div>
+
+<script>
+const SALT = "GC2026UFRJ";
+const items = [
+  { id: 1, text: "Conflito de interesses entre principal e agente", theory: "agencia" },
+  { id: 2, text: "Foco na maximização de valor para o acionista", theory: "agencia" },
+  { id: 3, text: "Mecanismos de controle e monitoramento", theory: "agencia" },
+  { id: 4, text: "Motivação extrínseca (incentivos e contratos)", theory: "agencia" },
+  { id: 5, text: "Empresa deve considerar todos os públicos afetados", theory: "stakeholders" },
+  { id: 6, text: "Governança como mediação de interesses múltiplos", theory: "stakeholders" },
+  { id: 7, text: "Influência direta na agenda ESG contemporânea", theory: "stakeholders" },
+  { id: 8, text: "Diálogo e participação como mecanismo central", theory: "stakeholders" },
+  { id: 9, text: "Gestores como 'guardiões' da organização", theory: "stewardship" },
+  { id: 10, text: "Motivação intrínseca e interesse coletivo", theory: "stewardship" },
+  { id: 11, text: "Confiança e autonomia entre propriedade e gestão", theory: "stewardship" },
+  { id: 12, text: "Aplicável a empresas familiares e sem fins lucrativos", theory: "stewardship" }
+];
+
+let startTime = Date.now();
+let checked = false;
+let draggedId = null;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
+}
+setInterval(updateTimer, 1000);
+
+function createDragItem(item) {
+  const el = document.createElement('div');
+  el.className = 'drag-item';
+  el.textContent = item.text;
+  el.draggable = true;
+  el.dataset.id = item.id;
+  el.addEventListener('dragstart', (e) => {
+    if (checked) return;
+    draggedId = item.id;
+    el.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', item.id);
+  });
+  el.addEventListener('dragend', () => {
+    el.classList.remove('dragging');
+    draggedId = null;
+  });
+  // Touch support
+  el.addEventListener('touchstart', (e) => {
+    if (checked) return;
+    draggedId = item.id;
+    el.classList.add('dragging');
+  });
+  el.addEventListener('click', () => {
+    if (checked) return;
+    if (el.classList.contains('placed')) {
+      // Return to pool
+      document.getElementById('pool').appendChild(el);
+      el.classList.remove('placed');
+      updateCheckBtn();
+    }
+  });
+  return el;
+}
+
+function ev(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function leave(e) { e.currentTarget.classList.remove('drag-over'); }
+
+function drop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (checked) return;
+  const id = e.dataTransfer ? e.dataTransfer.getData('text/plain') : draggedId;
+  if (!id) return;
+  const el = document.querySelector(`.drag-item[data-id="${id}"]`);
+  if (!el) return;
+  const zoneItems = e.currentTarget.querySelector('.zone-items');
+  zoneItems.appendChild(el);
+  el.classList.add('placed');
+  el.classList.remove('dragging');
+  draggedId = null;
+  updateCheckBtn();
+}
+
+// Touch drop on zones
+document.addEventListener('touchend', (e) => {
+  if (!draggedId || checked) return;
+  const touch = e.changedTouches[0];
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
+  const zone = target?.closest('.theory-zone');
+  if (zone) {
+    const el = document.querySelector(`.drag-item[data-id="${draggedId}"]`);
+    if (el) {
+      zone.querySelector('.zone-items').appendChild(el);
+      el.classList.add('placed');
+      el.classList.remove('dragging');
+    }
+  } else {
+    const el = document.querySelector(`.drag-item[data-id="${draggedId}"]`);
+    if (el) el.classList.remove('dragging');
+  }
+  draggedId = null;
+  updateCheckBtn();
+});
+
+function updateCheckBtn() {
+  const pool = document.getElementById('pool');
+  document.getElementById('btnCheck').disabled = pool.children.length > 0;
+}
+
+async function generateHash(text) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function checkAnswers() {
+  if (checked) return;
+  checked = true;
+  let correct = 0;
+  document.querySelectorAll('.theory-zone').forEach(zone => {
+    const theory = zone.dataset.theory;
+    zone.querySelectorAll('.drag-item').forEach(el => {
+      const item = items.find(i => i.id == el.dataset.id);
+      if (item.theory === theory) {
+        el.classList.add('correct-item');
+        correct++;
+      } else {
+        el.classList.add('wrong-item');
+      }
+    });
+  });
+
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  const pct = Math.round(correct / items.length * 100);
+  let msg = pct >= 90 ? 'Excelente domínio das teorias!' : pct >= 70 ? 'Bom resultado. Revise as diferenças entre as teorias.' : 'Releia a tabela comparativa das teorias nos slides.';
+
+  const hashInput = `${SALT}|GC2|${correct}/${items.length}|${elapsed}`;
+  const hash = await generateHash(hashInput);
+
+  const bar = document.getElementById('scoreBar');
+  bar.style.display = 'block';
+  bar.innerHTML = `<h2>Resultado</h2>
+    <div class="score-num">${correct}/${items.length}</div>
+    <div class="score-msg">${pct}% de acerto · Tempo: ${m}:${s}</div>
+    <p class="score-msg">${msg}</p>
+    <div class="hash-box">Verificação: <span>${hash.substring(0, 16)}</span></div>`;
+  document.getElementById('btnCheck').disabled = true;
+}
+
+// Init
+const pool = document.getElementById('pool');
+shuffle([...items]).forEach(item => pool.appendChild(createDragItem(item)));
+</script>
+</body>
+</html>

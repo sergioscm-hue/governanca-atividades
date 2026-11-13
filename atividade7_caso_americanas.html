@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC3 — Caso Americanas: Falhas de Governança</title>
+<style>
+:root {
+  --dk1: #0D1B2A; --lt1: #FFFFFF; --dk2: #1B3A5C; --lt2: #E0E8F0;
+  --accent: #2E6ED9; --gray: #5B7FA5; --deep: #162D50; --teal: #3D5A80;
+  --success: #27ae60; --error: #e74c3c; --warning: #f39c12;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; background: var(--dk1); color: var(--lt1); min-height: 100vh; }
+.header { background: linear-gradient(135deg, var(--dk1), var(--dk2)); padding: 24px; text-align: center; border-bottom: 3px solid var(--error); }
+.header h1 { font-size: 1.4rem; margin-bottom: 4px; }
+.header p { color: var(--gray); font-size: 0.85rem; }
+.badge { display: inline-block; background: var(--error); color: var(--lt1); padding: 3px 12px; border-radius: 12px; font-size: 0.75rem; margin-top: 8px; }
+.container { max-width: 800px; margin: 0 auto; padding: 16px; }
+.timer { position: fixed; top: 8px; right: 16px; background: var(--dk2); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--gray); border: 1px solid var(--teal); z-index: 10; }
+.context-box { background: var(--dk2); border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 3px solid var(--error); font-size: 0.9rem; color: var(--lt2); line-height: 1.6; }
+.context-box strong { color: var(--error); }
+.context-box .highlight { color: var(--warning); font-weight: 600; }
+.progress-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+.progress-dot { flex: 1; height: 6px; border-radius: 3px; background: var(--deep); transition: background 0.3s; }
+.progress-dot.active { background: var(--accent); }
+.progress-dot.done { background: var(--success); }
+.scenario { display: none; animation: fadeIn 0.4s; }
+.scenario.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.scenario-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.scenario-num { background: var(--accent); color: var(--lt1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; }
+.scenario-title { font-size: 1.1rem; font-weight: 700; }
+.scenario-desc { background: var(--deep); border-radius: 8px; padding: 14px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.6; color: var(--lt2); }
+.scenario-desc em { color: var(--warning); font-style: normal; font-weight: 600; }
+.options { display: flex; flex-direction: column; gap: 8px; }
+.option { background: var(--dk2); border: 2px solid var(--teal); border-radius: 10px; padding: 12px 16px; cursor: pointer; font-size: 0.88rem; line-height: 1.4; transition: all 0.2s; }
+.option:hover { border-color: var(--accent); background: var(--deep); }
+.option.selected { border-color: var(--accent); background: rgba(46,110,217,0.15); }
+.option.correct { border-color: var(--success); background: rgba(39,174,96,0.12); }
+.option.wrong { border-color: var(--error); background: rgba(231,76,60,0.12); }
+.option.disabled { pointer-events: none; opacity: 0.7; }
+.feedback { display: none; margin-top: 12px; padding: 14px; border-radius: 8px; font-size: 0.88rem; line-height: 1.5; animation: fadeIn 0.3s; }
+.feedback.show { display: block; }
+.feedback.ok { background: rgba(39,174,96,0.1); border: 1px solid var(--success); }
+.feedback.nok { background: rgba(231,76,60,0.1); border: 1px solid var(--error); }
+.feedback strong { display: block; margin-bottom: 4px; }
+.btn-next { display: none; margin-top: 14px; padding: 10px 24px; background: var(--accent); color: var(--lt1); border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600; }
+.btn-next:hover { background: #2560c0; }
+.score-bar { display: none; background: var(--dk2); border-radius: 10px; padding: 24px; text-align: center; margin-top: 16px; border: 2px solid var(--accent); }
+.score-bar h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.score-num { font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+.score-msg { color: var(--gray); font-size: 0.9rem; margin-top: 6px; }
+.hash-box { background: var(--deep); border-radius: 8px; padding: 10px; margin-top: 12px; font-family: monospace; font-size: 0.72rem; color: var(--gray); word-break: break-all; }
+.hash-box span { color: var(--accent); }
+.ref { text-align: center; color: var(--gray); font-size: 0.7rem; font-style: italic; padding: 16px; }
+.principle-tag { display: inline-block; background: var(--accent); color: var(--lt1); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-right: 4px; }
+@media (max-width: 600px) { .header h1 { font-size: 1.2rem; } }
+</style>
+</head>
+<body>
+<div class="timer" id="timer">⏱ 00:00</div>
+<div class="header">
+  <h1>🔍 Caso Americanas: Falhas de Governança</h1>
+  <p>Analise cenários reais e identifique as falhas de governança</p>
+  <span class="badge">GC3 · ~4 minutos · 6 cenários</span>
+</div>
+<div class="container">
+  <div class="context-box">
+    <strong>Contexto do Caso:</strong> Em janeiro de 2023, a Americanas S.A. revelou <span class="highlight">inconsistências contábeis de mais de R$ 20 bilhões</span>, envolvendo operações de <span class="highlight">risco sacado</span> (financiamento de fornecedores) que não eram registradas como dívida. A empresa entrou em recuperação judicial, evidenciando <span class="highlight">falhas graves nos mecanismos de governança corporativa</span>.
+  </div>
+  <div class="progress-bar" id="progressBar"></div>
+  <div id="scenariosContainer"></div>
+  <div class="score-bar" id="scoreBar"></div>
+</div>
+<div class="ref">Caso baseado em informações públicas · CVM, B3, Relatórios de Recuperação Judicial (2023)</div>
+
+<script>
+const SALT = "GC2026UFRJ";
+const scenarios = [
+  {
+    title: "Operações de Risco Sacado",
+    desc: 'A Americanas utilizava <em>operações de risco sacado</em> (forfait) com bancos para antecipar pagamentos a fornecedores. Essas operações geravam obrigações financeiras com os bancos, mas não eram contabilizadas como dívida no balanço — eram registradas como "fornecedores". Qual princípio de governança foi mais diretamente violado?',
+    options: [
+      { text: "Transparência — a empresa ocultou a real situação de endividamento dos stakeholders", correct: true },
+      { text: "Equidade — os acionistas minoritários foram tratados de forma diferente", correct: false },
+      { text: "Sustentabilidade — a empresa não pensou no longo prazo", correct: false },
+      { text: "Propósito — a empresa perdeu sua razão de existir", correct: false }
+    ],
+    feedback_ok: "Exato! A falta de transparência é o cerne deste problema. A IBGC define transparência como disponibilizar informações de interesse das partes, e não apenas as exigidas por lei. Ocultar R$ 20+ bi em dívidas viola frontalmente esse princípio.",
+    feedback_nok: "A principal falha aqui é de <strong>Transparência</strong>. A empresa ocultou deliberadamente sua posição real de endividamento, impedindo que acionistas, credores e reguladores tomassem decisões informadas. A IBGC exige que informações sejam disponibilizadas além das impostas por lei.",
+    tags: ["Transparência"]
+  },
+  {
+    title: "Papel do Conselho de Administração",
+    desc: 'O Conselho de Administração da Americanas era composto por profissionais de renome, incluindo representantes dos acionistas de referência (3G Capital). Apesar da gravidade das inconsistências, o conselho alegou <em>desconhecimento</em> das operações fraudulentas. Pela perspectiva da Teoria da Agência, como analisar essa situação?',
+    options: [
+      { text: "É um caso clássico de seleção adversa — os acionistas escolheram conselheiros incompetentes", correct: false },
+      { text: "Demonstra o problema de moral hazard — os gestores agiram com informações que o principal não possuía", correct: true },
+      { text: "Prova que a Stewardship Theory está correta — gestores agiram como guardiões", correct: false },
+      { text: "Evidencia a Teoria dos Stakeholders — todos os públicos foram prejudicados igualmente", correct: false }
+    ],
+    feedback_ok: "Correto! O moral hazard (risco moral) ocorre quando o agente age em interesse próprio explorando a assimetria informacional. Os gestores detinham informações sobre as operações de risco sacado que o conselho e os acionistas desconheciam, permitindo a perpetuação da fraude.",
+    feedback_nok: "A análise correta é pelo conceito de <strong>moral hazard (risco moral)</strong>. Na Teoria da Agência, isso ocorre quando o agente (gestor) explora a assimetria informacional para agir em interesse próprio. Os gestores detinham informações que o conselho (representando o principal/acionista) não possuía.",
+    tags: ["Teoria da Agência"]
+  },
+  {
+    title: "Falha da Auditoria Externa",
+    desc: 'A auditoria independente (PwC) assinou pareceres sem ressalvas por anos, não detectando as inconsistências bilionárias. A empresa também não tinha um <em>comitê de auditoria</em> efetivo que questionasse os números. Qual mecanismo de governança falhou estruturalmente?',
+    options: [
+      { text: "O Conselho Fiscal, que deveria ter sido mais atuante", correct: false },
+      { text: "A Assembleia Geral, que deveria ter questionado os resultados", correct: false },
+      { text: "O sistema de controles internos e o mecanismo de prestação de contas (accountability)", correct: true },
+      { text: "O Novo Mercado da B3, que deveria ter barrado a empresa", correct: false }
+    ],
+    feedback_ok: "Correto! O princípio de Responsabilização (accountability) exige que os agentes de governança prestem contas de sua atuação de modo claro e tempestivo. A falha nos controles internos e na auditoria (tanto interna quanto externa) impediu a detecção das inconsistências e representa uma ruptura estrutural no sistema de checks and balances.",
+    feedback_nok: "A falha estrutural está no <strong>sistema de controles internos e prestação de contas (accountability)</strong>. O IBGC exige que os agentes de governança prestem contas de forma clara e tempestiva. A auditoria externa e os controles internos são mecanismos centrais desse sistema — sua falha permitiu que bilhões em inconsistências passassem despercebidos por anos.",
+    tags: ["Responsabilização"]
+  },
+  {
+    title: "Impacto nos Acionistas Minoritários",
+    desc: 'Após a revelação das inconsistências, as ações da Americanas perderam mais de <em>90% do valor</em> em poucos dias. Investidores que confiaram nos balanços auditados sofreram perdas massivas. Os acionistas de referência (3G Capital) tinham acesso privilegiado às informações da empresa. Qual princípio foi violado em relação aos minoritários?',
+    options: [
+      { text: "Sustentabilidade — a empresa não era sustentável", correct: false },
+      { text: "Integridade — os gestores não foram íntegros", correct: false },
+      { text: "Equidade — tratamento diferenciado entre acionistas com e sem acesso à informação", correct: true },
+      { text: "Propósito — a empresa não tinha propósito claro", correct: false }
+    ],
+    feedback_ok: "Exato! O princípio da Equidade exige tratamento justo e isonômico de todos os sócios e demais partes interessadas. A assimetria de informação entre acionistas de referência e minoritários configura violação direta desse princípio. Os minoritários tomaram decisões de investimento baseados em informações incompletas.",
+    feedback_nok: "O princípio violado é a <strong>Equidade</strong>. Segundo o IBGC, equidade significa tratamento justo e isonômico de todas as partes. A diferença de acesso à informação entre acionistas de referência e minoritários criou uma assimetria que prejudicou diretamente quem não tinha informações privilegiadas.",
+    tags: ["Equidade"]
+  },
+  {
+    title: "Requisitos do Novo Mercado",
+    desc: 'A Americanas estava listada no <em>Novo Mercado da B3</em>, o segmento de maior exigência em governança corporativa. O Novo Mercado exige, entre outros: 100% de ações ordinárias, tag along de 100%, mínimo de 5 membros no conselho (20% independentes) e adoção de IFRS. Considerando o caso, qual é a principal reflexão?',
+    options: [
+      { text: "O Novo Mercado deveria ser extinto por ter falhado", correct: false },
+      { text: "Regras formais de governança são condição necessária, mas não suficiente — a cultura ética é fundamental", correct: true },
+      { text: "As regras do Novo Mercado eram inadequadas em 2023", correct: false },
+      { text: "O modelo Anglo-Saxão de governança é incompatível com o Brasil", correct: false }
+    ],
+    feedback_ok: "Excelente análise! O caso Americanas demonstra que compliance formal (cumprir regras) não garante boa governança. A 6ª edição do Código IBGC trouxe justamente os princípios de Integridade e Propósito, reconhecendo que a governança depende da cultura organizacional e do compromisso ético dos agentes, para além das estruturas formais.",
+    feedback_nok: "A reflexão central é que <strong>regras formais são necessárias, mas não suficientes</strong>. A Americanas cumpria formalmente os requisitos do Novo Mercado, mas isso não impediu a fraude. A 6ª edição do Código IBGC reconhece isso ao incluir Integridade e Propósito como princípios — a governança efetiva depende da cultura ética, não apenas de estruturas.",
+    tags: ["Novo Mercado", "IBGC"]
+  },
+  {
+    title: "Lições para a Governança Brasileira",
+    desc: 'O caso Americanas gerou ampla discussão sobre os mecanismos de governança no Brasil. A CVM abriu processos, credores formaram comitês, e a empresa entrou em recuperação judicial com dívidas superiores a R$ 40 bilhões. Qual é a principal lição sistêmica deste caso para a governança corporativa?',
+    options: [
+      { text: "Empresas brasileiras não deveriam abrir capital na bolsa", correct: false },
+      { text: "A auditoria externa deveria ser abolida por ser ineficaz", correct: false },
+      { text: "A governança efetiva exige a integração entre estrutura, cultura e vigilância contínua dos stakeholders", correct: true },
+      { text: "A concentração acionária do modelo brasileiro impede qualquer forma de governança", correct: false }
+    ],
+    feedback_ok: "Perfeita conclusão! O caso evidencia que governança efetiva não é apenas estrutura (conselho, comitês, auditorias), mas um ecossistema que integra cultura ética (Integridade), mecanismos de controle (Responsabilização), informação acessível (Transparência), tratamento justo (Equidade), visão de longo prazo (Sustentabilidade) e razão de existir (Propósito) — os 6 princípios da 6ª edição do IBGC.",
+    feedback_nok: "A principal lição é que <strong>governança efetiva exige integração entre estrutura, cultura e vigilância</strong>. O caso mostra que todos os pilares da governança falharam simultaneamente. A 6ª edição do IBGC reconhece isso com seus 6 princípios: Integridade, Transparência, Equidade, Responsabilização, Sustentabilidade e Propósito — todos interdependentes.",
+    tags: ["Governança Integrada"]
+  }
+];
+
+let current = 0;
+let score = 0;
+let startTime = Date.now();
+let answered = new Array(scenarios.length).fill(false);
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
+}
+setInterval(updateTimer, 1000);
+
+function renderProgress() {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < scenarios.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot' + (i === current ? ' active' : '') + (answered[i] ? ' done' : '');
+    bar.appendChild(dot);
+  }
+}
+
+function renderScenario(idx) {
+  const c = document.getElementById('scenariosContainer');
+  const s = scenarios[idx];
+  const tags = s.tags.map(t => `<span class="principle-tag">${t}</span>`).join('');
+  let optionsHtml = s.options.map((o, i) => `<div class="option" data-idx="${i}" onclick="selectOption(${idx},${i})">${o.text}</div>`).join('');
+  c.innerHTML = `
+    <div class="scenario active" id="scene-${idx}">
+      <div class="scenario-header">
+        <div class="scenario-num">${idx + 1}</div>
+        <div class="scenario-title">${s.title} ${tags}</div>
+      </div>
+      <div class="scenario-desc">${s.desc}</div>
+      <div class="options" id="opts-${idx}">${optionsHtml}</div>
+      <div class="feedback" id="fb-${idx}"></div>
+      <button class="btn-next" id="btnNext-${idx}" onclick="nextScenario()">Próximo Cenário →</button>
+    </div>`;
+}
+
+function selectOption(scIdx, optIdx) {
+  if (answered[scIdx]) return;
+  answered[scIdx] = true;
+  const s = scenarios[scIdx];
+  const opts = document.querySelectorAll(`#opts-${scIdx} .option`);
+  const correctIdx = s.options.findIndex(o => o.correct);
+  opts.forEach((el, i) => {
+    el.classList.add('disabled');
+    if (i === correctIdx) el.classList.add('correct');
+    if (i === optIdx && !s.options[optIdx].correct) el.classList.add('wrong');
+  });
+  const fb = document.getElementById(`fb-${scIdx}`);
+  const isCorrect = s.options[optIdx].correct;
+  if (isCorrect) { score++; fb.className = 'feedback show ok'; fb.innerHTML = `<strong>✅ Correto!</strong>${s.feedback_ok}`; }
+  else { fb.className = 'feedback show nok'; fb.innerHTML = `<strong>❌ Incorreto</strong>${s.feedback_nok}`; }
+  const btn = document.getElementById(`btnNext-${scIdx}`);
+  if (scIdx < scenarios.length - 1) { btn.style.display = 'inline-block'; btn.textContent = 'Próximo Cenário →'; }
+  else { btn.style.display = 'inline-block'; btn.textContent = 'Ver Resultado'; }
+  renderProgress();
+}
+
+async function generateHash(text) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function nextScenario() {
+  if (current < scenarios.length - 1) {
+    current++;
+    renderScenario(current);
+    renderProgress();
+  } else {
+    await showResult();
+  }
+}
+
+async function showResult() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  const pct = Math.round(score / scenarios.length * 100);
+  let msg = pct >= 90 ? 'Excelente análise do caso! Você domina os conceitos de governança.' : pct >= 70 ? 'Boa análise. Revise os princípios que causaram dúvida.' : 'Releia o estudo de caso nos slides e revise os princípios do IBGC.';
+  const hashInput = `${SALT}|GC3|${score}/${scenarios.length}|${elapsed}`;
+  const hash = await generateHash(hashInput);
+  document.getElementById('scenariosContainer').innerHTML = '';
+  const bar = document.getElementById('scoreBar');
+  bar.style.display = 'block';
+  bar.innerHTML = `<h2>Resultado da Análise</h2>
+    <div class="score-num">${score}/${scenarios.length}</div>
+    <div class="score-msg">${pct}% de acerto · Tempo: ${m}:${s}</div>
+    <p class="score-msg">${msg}</p>
+    <div class="hash-box">Verificação: <span>${hash.substring(0, 16)}</span></div>
+    <button class="btn-next" style="display:inline-block;margin-top:14px" onclick="location.reload()">Refazer Atividade</button>`;
+}
+
+// Init
+renderScenario(0);
+renderProgress();
+</script>
+</body>
+</html>

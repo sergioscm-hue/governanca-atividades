@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC4 — Classificação: Segmentos B3 e Princípios IBGC</title>
+<style>
+:root {
+  --dk1: #0D1B2A; --lt1: #FFFFFF; --dk2: #1B3A5C; --lt2: #E0E8F0;
+  --accent: #2E6ED9; --gray: #5B7FA5; --deep: #162D50; --teal: #3D5A80;
+  --success: #27ae60; --error: #e74c3c; --warning: #f39c12;
+  --gold: #f1c40f; --silver: #95a5a6; --bronze: #cd7f32;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; background: var(--dk1); color: var(--lt1); min-height: 100vh; }
+.header { background: linear-gradient(135deg, var(--dk1), var(--dk2)); padding: 24px; text-align: center; border-bottom: 3px solid var(--accent); }
+.header h1 { font-size: 1.35rem; margin-bottom: 4px; }
+.header p { color: var(--gray); font-size: 0.85rem; }
+.badge { display: inline-block; background: var(--accent); color: var(--lt1); padding: 3px 12px; border-radius: 12px; font-size: 0.75rem; margin-top: 8px; }
+.container { max-width: 800px; margin: 0 auto; padding: 16px; }
+.timer { position: fixed; top: 8px; right: 16px; background: var(--dk2); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--gray); border: 1px solid var(--teal); z-index: 10; }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab { flex: 1; padding: 10px; text-align: center; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; font-size: 0.9rem; background: var(--deep); color: var(--gray); border: 2px solid transparent; border-bottom: none; transition: all 0.2s; }
+.tab.active { background: var(--dk2); color: var(--lt1); border-color: var(--accent); }
+.tab.done { position: relative; }
+.tab.done::after { content: '✓'; position: absolute; top: 2px; right: 6px; font-size: 0.7rem; color: var(--success); }
+.section { display: none; animation: fadeIn 0.3s; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* PART 1: Ordering */
+.order-instructions { background: var(--dk2); border-radius: 10px; padding: 14px; margin-bottom: 14px; border-left: 3px solid var(--accent); font-size: 0.88rem; color: var(--lt2); }
+.order-instructions strong { color: var(--accent); }
+.order-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.order-item { background: var(--dk2); border: 2px solid var(--teal); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: grab; transition: all 0.2s; user-select: none; }
+.order-item:hover { border-color: var(--accent); }
+.order-item.dragging { opacity: 0.4; }
+.order-item .rank { background: var(--teal); color: var(--lt1); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+.order-item .item-text { flex: 1; font-size: 0.9rem; }
+.order-item .arrows { display: flex; flex-direction: column; gap: 2px; }
+.order-item .arrows button { background: none; border: 1px solid var(--gray); color: var(--gray); width: 24px; height: 20px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; line-height: 1; }
+.order-item .arrows button:hover { border-color: var(--accent); color: var(--accent); }
+.order-item.correct-item { border-color: var(--success); }
+.order-item.wrong-item { border-color: var(--error); }
+
+/* PART 2: Categorize Principles */
+.principle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.p-card { background: var(--dk2); border: 2px solid var(--teal); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; }
+.p-card:hover { border-color: var(--accent); }
+.p-card .p-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: var(--accent); }
+.p-card .p-desc { font-size: 0.82rem; color: var(--lt2); line-height: 1.4; }
+.p-card .p-edition { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; background: var(--deep); color: var(--gray); cursor: pointer; }
+.p-card .edition-options { display: none; margin-top: 6px; }
+.p-card .edition-options.show { display: flex; gap: 6px; }
+.edition-btn { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--teal); background: var(--deep); color: var(--lt2); font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+.edition-btn:hover { border-color: var(--accent); }
+.edition-btn.selected { background: var(--accent); color: var(--lt1); border-color: var(--accent); }
+.edition-btn.correct { background: var(--success); border-color: var(--success); color: var(--lt1); }
+.edition-btn.wrong { background: var(--error); border-color: var(--error); color: var(--lt1); }
+.p-card.answered { pointer-events: none; }
+
+.btn-row { display: flex; justify-content: center; gap: 12px; margin-top: 14px; }
+.btn { padding: 10px 24px; border-radius: 8px; border: none; font-size: 0.95rem; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: var(--lt1); }
+.btn-primary:hover { background: #2560c0; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.feedback-box { display: none; margin-top: 12px; padding: 14px; border-radius: 8px; font-size: 0.88rem; line-height: 1.5; }
+.feedback-box.show { display: block; }
+.feedback-box.ok { background: rgba(39,174,96,0.1); border: 1px solid var(--success); }
+.feedback-box.mixed { background: rgba(46,110,217,0.1); border: 1px solid var(--accent); }
+.score-bar { display: none; background: var(--dk2); border-radius: 10px; padding: 24px; text-align: center; margin-top: 16px; border: 2px solid var(--accent); }
+.score-bar h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.score-num { font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+.score-msg { color: var(--gray); font-size: 0.9rem; margin-top: 6px; }
+.hash-box { background: var(--deep); border-radius: 8px; padding: 10px; margin-top: 12px; font-family: monospace; font-size: 0.72rem; color: var(--gray); word-break: break-all; }
+.hash-box span { color: var(--accent); }
+.ref { text-align: center; color: var(--gray); font-size: 0.7rem; font-style: italic; padding: 16px; }
+@media (max-width: 600px) {
+  .principle-grid { grid-template-columns: 1fr; }
+  .header h1 { font-size: 1.15rem; }
+  .tabs { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="timer" id="timer">⏱ 00:00</div>
+<div class="header">
+  <h1>📊 Classificação: Segmentos B3 e Princípios IBGC</h1>
+  <p>Ordene os segmentos e classifique os princípios</p>
+  <span class="badge">GC4 · ~3 minutos · 2 partes</span>
+</div>
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" id="tab0" onclick="switchTab(0)">Parte 1: Segmentos B3</div>
+    <div class="tab" id="tab1" onclick="switchTab(1)">Parte 2: Princípios IBGC</div>
+  </div>
+
+  <!-- PART 1 -->
+  <div class="section active" id="sec0">
+    <div class="order-instructions">
+      <strong>Ordene os segmentos de listagem da B3</strong> do <em>mais exigente</em> (topo) para o <em>menos exigente</em> (base) em termos de governança corporativa. Use as setas ou arraste os itens.
+    </div>
+    <div class="order-list" id="orderList"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnCheckOrder" onclick="checkOrder()">Verificar Ordem</button>
+    </div>
+    <div class="feedback-box" id="fbOrder"></div>
+  </div>
+
+  <!-- PART 2 -->
+  <div class="section" id="sec1">
+    <div class="order-instructions">
+      <strong>Classifique cada princípio:</strong> ele estava na <em>5ª edição</em> do Código IBGC (2015) ou foi adicionado na <em>6ª edição</em> (2023)? Clique no princípio e selecione a edição.
+    </div>
+    <div class="principle-grid" id="principleGrid"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnCheckPrinciples" onclick="checkPrinciples()" disabled>Verificar Respostas</button>
+    </div>
+    <div class="feedback-box" id="fbPrinciples"></div>
+  </div>
+
+  <div class="score-bar" id="scoreBar"></div>
+</div>
+<div class="ref">IBGC — Código Brasileiro de Governança Corporativa, 5ª ed. (2015) e 6ª ed. (2023) · B3 — Segmentos de Listagem</div>
+
+<script>
+const SALT = "GC2026UFRJ";
+let startTime = Date.now();
+let part1Score = -1, part2Score = -1;
+
+// Timer
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
+}
+setInterval(updateTimer, 1000);
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.section').forEach((s, i) => s.classList.toggle('active', i === idx));
+}
+
+// ====== PART 1: Ordering B3 Segments ======
+const segments = [
+  { id: 'nm', name: 'Novo Mercado', detail: '100% ON, tag along 100%, 5+ conselheiros, 20% independentes, IFRS' },
+  { id: 'n2', name: 'Nível 2', detail: 'Tag along 100%, permite PN, IFRS, conselheiros independentes' },
+  { id: 'n1', name: 'Nível 1', detail: 'Free float 25%, demonstrações financeiras conforme IFRS' },
+  { id: 'tr', name: 'Tradicional (Básico)', detail: 'Requisitos mínimos da Lei das S.A. e CVM' }
+];
+const correctOrder = ['nm', 'n2', 'n1', 'tr'];
+let currentOrder = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderOrderList() {
+  const list = document.getElementById('orderList');
+  list.innerHTML = '';
+  currentOrder.forEach((seg, i) => {
+    const el = document.createElement('div');
+    el.className = 'order-item';
+    el.dataset.id = seg.id;
+    el.draggable = true;
+    el.innerHTML = `
+      <div class="rank">${i + 1}</div>
+      <div class="item-text"><strong>${seg.name}</strong><br><span style="color:var(--gray);font-size:0.8rem">${seg.detail}</span></div>
+      <div class="arrows">
+        <button onclick="moveItem(${i},-1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+        <button onclick="moveItem(${i},1)" ${i === currentOrder.length - 1 ? 'disabled' : ''}>▼</button>
+      </div>`;
+    el.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', i); el.classList.add('dragging'); });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    el.addEventListener('dragover', (e) => e.preventDefault());
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const from = parseInt(e.dataTransfer.getData('text/plain'));
+      const to = i;
+      if (from !== to) { const item = currentOrder.splice(from, 1)[0]; currentOrder.splice(to, 0, item); renderOrderList(); }
+    });
+    list.appendChild(el);
+  });
+}
+
+function moveItem(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= currentOrder.length) return;
+  [currentOrder[idx], currentOrder[newIdx]] = [currentOrder[newIdx], currentOrder[idx]];
+  renderOrderList();
+}
+
+function checkOrder() {
+  let correct = 0;
+  const items = document.querySelectorAll('.order-item');
+  currentOrder.forEach((seg, i) => {
+    const isCorrect = seg.id === correctOrder[i];
+    if (isCorrect) correct++;
+    items[i].classList.add(isCorrect ? 'correct-item' : 'wrong-item');
+    items[i].style.cursor = 'default';
+    items[i].draggable = false;
+    items[i].querySelectorAll('button').forEach(b => b.disabled = true);
+  });
+  part1Score = correct;
+  const fb = document.getElementById('fbOrder');
+  if (correct === 4) {
+    fb.className = 'feedback-box show ok';
+    fb.innerHTML = '<strong>✅ Ordem perfeita!</strong> O Novo Mercado é o segmento mais exigente, seguido pelo Nível 2, Nível 1 e Tradicional. Cada nível adiciona requisitos progressivos de governança.';
+  } else {
+    fb.className = 'feedback-box show mixed';
+    fb.innerHTML = `<strong>⚠️ ${correct}/4 na posição correta.</strong> A ordem do mais ao menos exigente é: <strong>Novo Mercado → Nível 2 → Nível 1 → Tradicional</strong>. O Novo Mercado exige 100% de ações ON e tag along integral; o Tradicional segue apenas os requisitos mínimos da Lei das S.A.`;
+  }
+  document.getElementById('btnCheckOrder').disabled = true;
+  document.getElementById('tab0').classList.add('done');
+  checkFinalScore();
+}
+
+// ====== PART 2: Classify IBGC Principles ======
+const principles = [
+  { id: 'integridade', name: 'Integridade', desc: 'Prática contínua de comportamento ético, íntegro e coerente.', edition: '6' },
+  { id: 'transparencia', name: 'Transparência', desc: 'Disponibilizar informações de interesse das partes, e não apenas as impostas por lei.', edition: '5' },
+  { id: 'equidade', name: 'Equidade', desc: 'Tratamento justo e isonômico de todos os sócios e demais partes interessadas.', edition: '5' },
+  { id: 'responsabilizacao', name: 'Responsabilização', desc: 'Agentes de governança devem prestar contas de sua atuação de modo claro e tempestivo.', edition: '5' },
+  { id: 'sustentabilidade', name: 'Sustentabilidade', desc: 'Zelar pela viabilidade econômico-financeira, ambiental, social e de governança.', edition: '6' },
+  { id: 'proposito', name: 'Propósito', desc: 'Razão de ser da organização, que define identidade e orienta decisões estratégicas.', edition: '6' }
+];
+
+let principleAnswers = {};
+
+function renderPrinciples() {
+  const grid = document.getElementById('principleGrid');
+  grid.innerHTML = '';
+  shuffle(principles).forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'p-card';
+    card.id = `pcard-${p.id}`;
+    card.innerHTML = `
+      <div class="p-name">${p.name}</div>
+      <div class="p-desc">${p.desc}</div>
+      <div class="edition-options show" id="eopts-${p.id}">
+        <button class="edition-btn" onclick="selectEdition('${p.id}','5',this)">5ª Edição (2015)</button>
+        <button class="edition-btn" onclick="selectEdition('${p.id}','6',this)">6ª Edição (2023)</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function selectEdition(pid, edition, btn) {
+  principleAnswers[pid] = edition;
+  const opts = document.querySelectorAll(`#eopts-${pid} .edition-btn`);
+  opts.forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('btnCheckPrinciples').disabled = Object.keys(principleAnswers).length < principles.length;
+}
+
+function checkPrinciples() {
+  let correct = 0;
+  principles.forEach(p => {
+    const card = document.getElementById(`pcard-${p.id}`);
+    card.classList.add('answered');
+    const btns = document.querySelectorAll(`#eopts-${p.id} .edition-btn`);
+    btns.forEach(b => {
+      const val = b.textContent.includes('5ª') ? '5' : '6';
+      if (val === p.edition) b.classList.add('correct');
+      if (val === principleAnswers[p.id] && val !== p.edition) b.classList.add('wrong');
+    });
+    if (principleAnswers[p.id] === p.edition) correct++;
+  });
+  part2Score = correct;
+  const fb = document.getElementById('fbPrinciples');
+  if (correct === 6) {
+    fb.className = 'feedback-box show ok';
+    fb.innerHTML = '<strong>✅ Perfeito!</strong> A 5ª edição (2015) tinha 4 princípios: Transparência, Equidade, Prestação de Contas e Responsabilidade Corporativa. A 6ª edição (2023) reformulou para 6: adicionou <strong>Integridade</strong>, <strong>Sustentabilidade</strong> e <strong>Propósito</strong>, e renomeou "Prestação de Contas" para "Responsabilização".';
+  } else {
+    fb.className = 'feedback-box show mixed';
+    fb.innerHTML = `<strong>⚠️ ${correct}/6 corretos.</strong> <strong>5ª edição (2015):</strong> Transparência, Equidade, Responsabilização (era "Prestação de Contas"). <strong>Novos na 6ª edição (2023):</strong> Integridade, Sustentabilidade e Propósito. A 6ª edição ampliou de 4 para 6 princípios.`;
+  }
+  document.getElementById('btnCheckPrinciples').disabled = true;
+  document.getElementById('tab1').classList.add('done');
+  checkFinalScore();
+}
+
+async function generateHash(text) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function checkFinalScore() {
+  if (part1Score < 0 || part2Score < 0) return;
+  const total = part1Score + part2Score;
+  const max = 10;
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  const pct = Math.round(total / max * 100);
+  let msg = pct >= 90 ? 'Excelente domínio dos segmentos e princípios!' : pct >= 70 ? 'Bom resultado. Revise os pontos marcados em vermelho.' : 'Revise os segmentos de listagem da B3 e a evolução dos princípios do IBGC.';
+  const hashInput = `${SALT}|GC4|${total}/${max}|${elapsed}`;
+  const hash = await generateHash(hashInput);
+  const bar = document.getElementById('scoreBar');
+  bar.style.display = 'block';
+  bar.innerHTML = `<h2>Resultado Final</h2>
+    <div class="score-num">${total}/${max}</div>
+    <div class="score-msg">Segmentos B3: ${part1Score}/4 · Princípios IBGC: ${part2Score}/6</div>
+    <div class="score-msg">${pct}% de acerto · Tempo: ${m}:${s}</div>
+    <p class="score-msg">${msg}</p>
+    <div class="hash-box">Verificação: <span>${hash.substring(0, 16)}</span></div>
+    <button class="btn btn-primary" style="margin-top:14px" onclick="location.reload()">Refazer Atividade</button>`;
+}
+
+// Init
+currentOrder = shuffle([...segments]);
+renderOrderList();
+renderPrinciples();
+</script>
+</body>
+</html>

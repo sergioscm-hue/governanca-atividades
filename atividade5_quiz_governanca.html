@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC1 — Quiz: Fundamentos de Governança Corporativa</title>
+<style>
+:root {
+  --dk1: #0D1B2A; --lt1: #FFFFFF; --dk2: #1B3A5C; --lt2: #E0E8F0;
+  --accent: #2E6ED9; --gray: #5B7FA5; --deep: #162D50; --teal: #3D5A80;
+  --success: #27ae60; --error: #e74c3c; --warning: #f39c12;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; background: var(--dk1); color: var(--lt1); min-height: 100vh; }
+.header { background: linear-gradient(135deg, var(--dk1), var(--dk2)); padding: 24px; text-align: center; border-bottom: 3px solid var(--accent); }
+.header h1 { font-size: 1.5rem; margin-bottom: 4px; }
+.header p { color: var(--gray); font-size: 0.9rem; }
+.badge { display: inline-block; background: var(--accent); color: var(--lt1); padding: 3px 12px; border-radius: 12px; font-size: 0.75rem; margin-top: 8px; }
+.progress-bar { height: 4px; background: var(--deep); }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.4s; }
+.container { max-width: 720px; margin: 0 auto; padding: 16px; }
+.question-card { background: var(--dk2); border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--teal); }
+.q-number { display: inline-block; background: var(--accent); color: var(--lt1); width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; }
+.q-text { font-size: 1.05rem; line-height: 1.5; margin-bottom: 16px; }
+.options { display: flex; flex-direction: column; gap: 8px; }
+.option { background: var(--deep); border: 2px solid transparent; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; line-height: 1.4; display: flex; align-items: flex-start; gap: 10px; }
+.option:hover:not(.disabled) { border-color: var(--accent); background: rgba(46,110,217,0.15); }
+.option.selected { border-color: var(--accent); background: rgba(46,110,217,0.2); }
+.option.correct { border-color: var(--success); background: rgba(39,174,96,0.15); }
+.option.wrong { border-color: var(--error); background: rgba(231,76,60,0.15); }
+.option.disabled { cursor: default; opacity: 0.7; }
+.option.disabled.correct { opacity: 1; }
+.option-letter { min-width: 24px; height: 24px; border-radius: 50%; background: var(--teal); color: var(--lt1); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+.option.correct .option-letter { background: var(--success); }
+.option.wrong .option-letter { background: var(--error); }
+.feedback { margin-top: 12px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; display: none; }
+.feedback.show { display: block; }
+.feedback.correct { background: rgba(39,174,96,0.15); border-left: 3px solid var(--success); }
+.feedback.wrong { background: rgba(231,76,60,0.15); border-left: 3px solid var(--error); }
+.feedback strong { display: block; margin-bottom: 4px; }
+.nav-buttons { display: flex; justify-content: space-between; margin-top: 16px; }
+.btn { padding: 10px 24px; border-radius: 8px; border: none; font-size: 0.95rem; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: var(--lt1); }
+.btn-primary:hover { background: #2560c0; }
+.btn-secondary { background: var(--teal); color: var(--lt1); }
+.btn-secondary:hover { background: var(--dk2); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.result-card { background: var(--dk2); border-radius: 12px; padding: 32px; text-align: center; border: 2px solid var(--accent); display: none; }
+.result-card h2 { font-size: 1.4rem; margin-bottom: 8px; }
+.score-circle { width: 120px; height: 120px; border-radius: 50%; border: 6px solid var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px auto; }
+.score-circle .number { font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+.score-circle .label { font-size: 0.75rem; color: var(--gray); }
+.result-msg { color: var(--gray); margin-bottom: 20px; font-size: 0.95rem; }
+.hash-box { background: var(--deep); border-radius: 8px; padding: 12px; margin-top: 16px; font-family: monospace; font-size: 0.75rem; color: var(--gray); word-break: break-all; }
+.hash-box span { color: var(--accent); }
+.timer { position: fixed; top: 8px; right: 16px; background: var(--dk2); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: var(--gray); border: 1px solid var(--teal); z-index: 10; }
+.ref { text-align: center; color: var(--gray); font-size: 0.7rem; font-style: italic; padding: 16px; }
+@media (max-width: 600px) {
+  .header h1 { font-size: 1.2rem; }
+  .q-text { font-size: 0.95rem; }
+  .option { font-size: 0.88rem; padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="timer" id="timer">⏱ 00:00</div>
+<div class="header">
+  <h1>Quiz: Fundamentos de Governança Corporativa</h1>
+  <p>Aula 3 — Origens, Teorias e Modelos</p>
+  <span class="badge">GC1 · ~4 minutos · 8 questões</span>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+<div class="container" id="quiz-container"></div>
+<div class="container">
+  <div class="result-card" id="result"></div>
+</div>
+<div class="ref">Baseado em: IBGC (2023), Jensen & Meckling (1976), Freeman (1984), Donaldson & Davis (1991), OECD (2023)</div>
+
+<script>
+const SALT = "GC2026UFRJ";
+const questions = [
+  {
+    q: "Qual obra é considerada pioneira na identificação da separação entre propriedade e controle nas corporações?",
+    opts: [
+      "Jensen & Meckling (1976) — Theory of the Firm",
+      "Berle & Means (1932) — The Modern Corporation and Private Property",
+      "Freeman (1984) — Strategic Management: A Stakeholder Approach",
+      "Cadbury Report (1992)"
+    ],
+    correct: 1,
+    explain: "Berle & Means (1932) foram os primeiros a documentar sistematicamente o distanciamento entre donos (acionistas) e gestores, decorrente da dispersão do capital nas bolsas no início do século XX."
+  },
+  {
+    q: "Na Teoria da Agência (Jensen & Meckling, 1976), o 'problema de agência' decorre fundamentalmente de:",
+    opts: [
+      "Excesso de regulação governamental sobre as empresas",
+      "Conflito de interesses e assimetria informacional entre principal e agente",
+      "Falta de motivação intrínseca dos colaboradores",
+      "Ausência de planejamento estratégico de longo prazo"
+    ],
+    correct: 1,
+    explain: "O problema de agência surge quando o agente (gestor) pode agir em benefício próprio, aproveitando a assimetria de informação que o principal (acionista) tem dificuldade de monitorar."
+  },
+  {
+    q: "A Stewardship Theory (Donaldson & Davis, 1991) se diferencia da Teoria da Agência ao propor que os gestores:",
+    opts: [
+      "Precisam de controles externos rigorosos para não desviar recursos",
+      "São intrinsecamente motivados a agir como 'guardiões' da organização",
+      "Devem ser substituídos periodicamente para evitar conflitos de interesse",
+      "São indiferentes aos resultados organizacionais"
+    ],
+    correct: 1,
+    explain: "A Stewardship Theory pressupõe que gestores são intrinsecamente motivados a agir no interesse coletivo, funcionando como 'guardiões' (stewards) da organização — em oposição à visão oportunista da Teoria da Agência."
+  },
+  {
+    q: "A Lei Sarbanes-Oxley (SOX), aprovada em 2002 nos EUA, foi uma resposta direta a qual evento?",
+    opts: [
+      "Crise financeira global de 2008",
+      "Escândalos contábeis como Enron e WorldCom (2001-2002)",
+      "Criação do Novo Mercado da B3",
+      "Publicação do Relatório Cadbury no Reino Unido"
+    ],
+    correct: 1,
+    explain: "A SOX surgiu como resposta às fraudes contábeis bilionárias da Enron e WorldCom, estabelecendo responsabilização criminal de CEOs/CFOs e controles rigorosos de TI e auditoria."
+  },
+  {
+    q: "Quantos princípios o Código de Melhores Práticas do IBGC passou a ter em sua 6ª edição (2023)?",
+    opts: [
+      "4 princípios (mesmos da 5ª edição)",
+      "5 princípios (com adição de ESG)",
+      "6 princípios (com adição de Integridade e Propósito)",
+      "8 princípios (com adição de Inovação, ESG, Diversidade e Propósito)"
+    ],
+    correct: 2,
+    explain: "A 6ª edição do Código IBGC (2023) ampliou de 4 para 6 princípios, adicionando Integridade e Propósito — refletindo a evolução para uma governança mais voltada à ética e ao valor compartilhado."
+  },
+  {
+    q: "No modelo de governança Anglo-Saxão, qual é a característica predominante da estrutura de propriedade?",
+    opts: [
+      "Propriedade concentrada em blocos familiares ou bancários",
+      "Cogestão obrigatória com participação de empregados",
+      "Propriedade dispersa com mercado de capitais forte",
+      "Controle estatal majoritário com conselho indicado pelo governo"
+    ],
+    correct: 2,
+    explain: "O modelo Anglo-Saxão (EUA, Reino Unido, Austrália) caracteriza-se pela propriedade dispersa entre muitos acionistas, forte mercado de capitais, board unitário (one-tier) e foco no shareholder value."
+  },
+  {
+    q: "O Novo Mercado da B3, criado em 2000, exige das empresas listadas, entre outros requisitos:",
+    opts: [
+      "Emissão apenas de ações ordinárias (ON) e tag along de 100%",
+      "Participação obrigatória de empregados no conselho de administração",
+      "Mínimo de 50% de conselheiros independentes",
+      "Auditoria exclusivamente por Big Four internacionais"
+    ],
+    correct: 0,
+    explain: "O Novo Mercado exige somente ações ON (sem preferenciais), tag along de 100%, free float mínimo de 25%, conselho com mínimo 5 membros (20% independentes) e demonstrações em IFRS."
+  },
+  {
+    q: "Na estrutura de governança corporativa, qual órgão é responsável pela direção estratégica e fiscalização da gestão?",
+    opts: [
+      "Assembleia Geral de Acionistas",
+      "Conselho de Administração",
+      "Diretoria Executiva",
+      "Conselho Fiscal"
+    ],
+    correct: 1,
+    explain: "O Conselho de Administração é o órgão colegiado responsável pela direção estratégica e pela fiscalização da gestão executiva, servindo como elo entre os acionistas e a diretoria."
+  }
+];
+
+let current = 0, score = 0, answered = new Array(questions.length).fill(false);
+let startTime = Date.now();
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
+}
+setInterval(updateTimer, 1000);
+
+function render() {
+  const container = document.getElementById('quiz-container');
+  document.getElementById('progress').style.width = ((current + 1) / questions.length * 100) + '%';
+  const q = questions[current];
+  const letters = ['A', 'B', 'C', 'D'];
+  let html = `<div class="question-card">
+    <div class="q-number">${current + 1}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options">`;
+  q.opts.forEach((opt, i) => {
+    const cls = answered[current] ? (i === q.correct ? 'correct disabled' : (q.userAnswer === i ? 'wrong disabled' : 'disabled')) : '';
+    html += `<div class="option ${cls}" data-idx="${i}" ${answered[current] ? '' : `onclick="selectAnswer(${i})"`}>
+      <div class="option-letter">${letters[i]}</div>
+      <div>${opt}</div>
+    </div>`;
+  });
+  html += `</div>
+    <div class="feedback ${answered[current] ? 'show' : ''} ${answered[current] ? (q.userAnswer === q.correct ? 'correct' : 'wrong') : ''}">
+      <strong>${answered[current] ? (q.userAnswer === q.correct ? '✅ Correto!' : '❌ Incorreto') : ''}</strong>
+      ${answered[current] ? q.explain : ''}
+    </div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn btn-secondary" onclick="navigate(-1)" ${current === 0 ? 'disabled' : ''}>← Anterior</button>
+    ${current < questions.length - 1 ?
+      `<button class="btn btn-primary" onclick="navigate(1)" ${!answered[current] ? 'disabled' : ''}>Próxima →</button>` :
+      `<button class="btn btn-primary" onclick="showResult()" ${!answered[current] ? 'disabled' : ''}>Ver Resultado</button>`
+    }
+  </div>`;
+  container.innerHTML = html;
+}
+
+function selectAnswer(idx) {
+  if (answered[current]) return;
+  answered[current] = true;
+  questions[current].userAnswer = idx;
+  if (idx === questions[current].correct) score++;
+  render();
+}
+
+function navigate(dir) {
+  current += dir;
+  if (current < 0) current = 0;
+  if (current >= questions.length) current = questions.length - 1;
+  render();
+}
+
+async function generateHash(text) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function showResult() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  const pct = Math.round(score / questions.length * 100);
+  let msg = '';
+  if (pct >= 90) msg = 'Excelente! Domínio sólido dos fundamentos de governança.';
+  else if (pct >= 70) msg = 'Bom resultado! Revise os pontos que errou para consolidar.';
+  else if (pct >= 50) msg = 'Resultado razoável. Releia as seções sobre teorias e marcos regulatórios.';
+  else msg = 'Precisa de mais estudo. Revise os slides da Aula 3 com atenção.';
+
+  const hashInput = `${SALT}|GC1|${score}/${questions.length}|${elapsed}`;
+  const hash = await generateHash(hashInput);
+
+  document.getElementById('quiz-container').style.display = 'none';
+  const result = document.getElementById('result');
+  result.style.display = 'block';
+  result.innerHTML = `
+    <h2>Resultado do Quiz</h2>
+    <div class="score-circle">
+      <div class="number">${score}/${questions.length}</div>
+      <div class="label">${pct}% · ${m}:${s}</div>
+    </div>
+    <p class="result-msg">${msg}</p>
+    <button class="btn btn-primary" onclick="location.reload()">Refazer Quiz</button>
+    <div class="hash-box">Código de verificação: <span>${hash.substring(0, 16)}</span></div>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
